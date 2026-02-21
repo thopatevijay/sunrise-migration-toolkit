@@ -138,6 +138,26 @@ A white-label, per-token onboarding experience that Sunrise deploys for each mig
 
 ---
 
+## User Stories
+
+### Sunrise Team — Finding the Next Migration
+
+> **As a Sunrise team member**, I open the Demand Dashboard on Monday morning. The top-ranked token is ONDO (Ondo Finance) with an MDS of 87. The dashboard shows: 1,200+ Solana wallets bridged out to Ethereum last week specifically to buy ONDO, Jupiter search volume for "ONDO" spiked 4x in the past 14 days, and 340+ tweets from Solana-native accounts requesting ONDO on Solana. I click "Generate Proposal" and get a structured brief — token health metrics, community size, liquidity requirements — ready to share with the team and start the migration conversation with Ondo's team.
+
+### Token Team — Deciding to Come to Solana
+
+> **As a token project founder on Ethereum**, I'm considering expanding to Solana but unsure if real demand exists. Someone shares the Migration Toolkit link. I search for my token and see a demand score of 72, with data showing 800+ Solana wallets already hold my token via wrapped bridges, and social mentions are trending up. I see a "Request Migration via Sunrise" button, click it, and get connected with the Sunrise team — with all my demand data pre-filled in the application.
+
+### Community Member — Onboarding After Migration
+
+> **As a HYPE holder on Hyperliquid**, I see a tweet that HYPE is now live on Solana via Sunrise. The tweet links to `toolkit.sunrise/onboard/hype`. I land on a branded page explaining what happened. I don't have a Solana wallet, so I follow the guided Phantom setup (takes 2 minutes). Next step pre-configures the bridge — I enter the amount, approve, and my HYPE arrives on Solana in under a minute. The final step shows me where to trade (Jupiter, with a direct swap link) and where to earn yield (Kamino lending at 8.2% APY). I went from "what is Solana?" to actively using Solana DeFi in 10 minutes.
+
+### Solana Power User — Signaling Demand
+
+> **As an active Solana trader**, I keep bridging to Arbitrum to trade tokens that aren't on Solana yet. I visit the Demand Dashboard, see the tokens I care about ranked, and upvote the ones I want most. I can also submit a token I think is missing from the rankings. When one of my upvoted tokens finally migrates via Sunrise, I get notified and the onboarding page is ready for me to share with my community.
+
+---
+
 ## Why This Matters for Sunrise
 
 | Without Toolkit | With Toolkit |
