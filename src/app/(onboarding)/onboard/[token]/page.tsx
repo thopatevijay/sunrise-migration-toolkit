@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { AnimatePresence } from "framer-motion";
 import {
   getOnboardingConfig,
   SUPPORTED_ONBOARDING_TOKENS,
 } from "@/lib/config/onboarding";
 import { OnboardingStepper } from "@/components/onboarding/onboarding-stepper";
+import { SlideIn } from "@/components/shared/motion";
 import { WelcomeStep } from "@/components/onboarding/steps/welcome-step";
 import { WalletStep } from "@/components/onboarding/steps/wallet-step";
 import { BridgeStep } from "@/components/onboarding/steps/bridge-step";
@@ -50,7 +52,9 @@ export default function OnboardingPage({
         currentStep={currentStep}
         onStepClick={setCurrentStep}
       />
-      {steps[currentStep]}
+      <AnimatePresence mode="wait">
+        <SlideIn key={currentStep}>{steps[currentStep]}</SlideIn>
+      </AnimatePresence>
     </div>
   );
 }
