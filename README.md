@@ -1,4 +1,4 @@
-# Sunrise Migration Toolkit
+# Tideshift
 
 **Full-lifecycle infrastructure for token migrations to Solana — from demand discovery to community onboarding.**
 
@@ -27,13 +27,13 @@ A token arriving on Solana is only half the migration. The token's community —
 
 This onboarding journey is undocumented and different for every token. Most community members never complete it. The result: tokens arrive on Solana but without the users who give them life.
 
-**Sunrise handles the hardest parts — canonical asset arrival, liquidity, and venue distribution. The Migration Toolkit handles everything around it.**
+**Sunrise handles the hardest parts — canonical asset arrival, liquidity, and venue distribution. Tideshift handles everything around it.**
 
 ---
 
 ## Solution
 
-The Sunrise Migration Toolkit is two products in one, designed to serve Sunrise's migration pipeline from end to end:
+The Tideshift is two products in one, designed to serve Sunrise's migration pipeline from end to end:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -47,7 +47,7 @@ The Sunrise Migration Toolkit is two products in one, designed to serve Sunrise'
 │  │  next?       │    │  this        │    │  Solana users         │  │
 │  │              │    │              │    │                       │  │
 │  │  Migration   │    │  Asset       │    │  Migration            │  │
-│  │  Toolkit     │    │  arrival,    │    │  Toolkit              │  │
+│  │  Tideshift   │    │  arrival,    │    │  Tideshift            │  │
 │  │  (upstream)  │    │  liquidity,  │    │  (downstream)         │  │
 │  │              │    │  distribution│    │                       │  │
 │  └──────────────┘    └──────────────┘    └───────────────────────┘  │
@@ -146,11 +146,11 @@ A white-label, per-token onboarding experience that Sunrise deploys for each mig
 
 ### Token Team — Deciding to Come to Solana
 
-> **As a token project founder on Ethereum**, I'm considering expanding to Solana but unsure if real demand exists. Someone shares the Migration Toolkit link. I search for my token and see a demand score of 72, with data showing 800+ Solana wallets already hold my token via wrapped bridges, and social mentions are trending up. I see a "Request Migration via Sunrise" button, click it, and get connected with the Sunrise team — with all my demand data pre-filled in the application.
+> **As a token project founder on Ethereum**, I'm considering expanding to Solana but unsure if real demand exists. Someone shares the Tideshift link. I search for my token and see a demand score of 72, with data showing 800+ Solana wallets already hold my token via wrapped bridges, and social mentions are trending up. I see a "Request Migration via Sunrise" button, click it, and get connected with the Sunrise team — with all my demand data pre-filled in the application.
 
 ### Community Member — Onboarding After Migration
 
-> **As a HYPE holder on Hyperliquid**, I see a tweet that HYPE is now live on Solana via Sunrise. The tweet links to `toolkit.sunrise/onboard/hype`. I land on a branded page explaining what happened. I don't have a Solana wallet, so I follow the guided Phantom setup (takes 2 minutes). Next step pre-configures the bridge — I enter the amount, approve, and my HYPE arrives on Solana in under a minute. The final step shows me where to trade (Jupiter, with a direct swap link) and where to earn yield (Kamino lending at 8.2% APY). I went from "what is Solana?" to actively using Solana DeFi in 10 minutes.
+> **As a HYPE holder on Hyperliquid**, I see a tweet that HYPE is now live on Solana via Sunrise. The tweet links to `tideshift.app/onboard/hype`. I land on a branded page explaining what happened. I don't have a Solana wallet, so I follow the guided Phantom setup (takes 2 minutes). Next step pre-configures the bridge — I enter the amount, approve, and my HYPE arrives on Solana in under a minute. The final step shows me where to trade (Jupiter, with a direct swap link) and where to earn yield (Kamino lending at 8.2% APY). I went from "what is Solana?" to actively using Solana DeFi in 10 minutes.
 
 ### Solana Power User — Signaling Demand
 
@@ -160,7 +160,7 @@ A white-label, per-token onboarding experience that Sunrise deploys for each mig
 
 ## Why This Matters for Sunrise
 
-| Without Toolkit | With Toolkit |
+| Without Tideshift | With Tideshift |
 |----------------|-------------|
 | Manual demand discovery | Data-driven candidate scoring |
 | Anecdotal signals | Quantified demand with MDS |
@@ -168,7 +168,7 @@ A white-label, per-token onboarding experience that Sunrise deploys for each mig
 | No post-migration metrics | Conversion analytics at every step |
 | Each migration starts from scratch | Repeatable, scalable process |
 
-The toolkit turns Sunrise's migration pipeline from a series of one-off efforts into a **systematic, measurable operation**.
+Tideshift turns Sunrise's migration pipeline from a series of one-off efforts into a **systematic, measurable operation**.
 
 ---
 
@@ -228,7 +228,7 @@ The toolkit turns Sunrise's migration pipeline from a series of one-off efforts 
 
 ## Future Vision
 
-This toolkit is designed to grow with Sunrise — not as a hackathon demo, but as permanent infrastructure.
+Tideshift is designed to grow with Sunrise — not as a hackathon demo, but as permanent infrastructure.
 
 **Phase 1 (Hackathon):** Core demand dashboard + onboarding flow for 1-2 tokens
 
@@ -252,8 +252,8 @@ This toolkit is designed to grow with Sunrise — not as a hackathon demo, but a
 
 ```bash
 # Clone the repository
-git clone https://github.com/thopatevijay/sunrise-migration-toolkit.git
-cd sunrise-migration-toolkit
+git clone https://github.com/thopatevijay/tideshift.git
+cd tideshift
 
 # Install dependencies
 npm install

@@ -1,8 +1,8 @@
-# Architecture — Sunrise Migration Toolkit
+# Architecture — Tideshift
 
 ## System Overview
 
-The toolkit consists of two main products sharing a common data layer:
+Tideshift consists of two main products sharing a common data layer:
 
 1. **Demand Discovery Dashboard** — identifies and ranks token migration candidates
 2. **Community Onboarding Flow** — white-label onboarding for migrated token communities
@@ -10,7 +10,7 @@ The toolkit consists of two main products sharing a common data layer:
 ## Directory Structure
 
 ```
-sunrise-migration-toolkit/
+tideshift/
 ├── app/                          # Next.js App Router
 │   ├── layout.tsx               # Root layout
 │   ├── page.tsx                 # Landing page
