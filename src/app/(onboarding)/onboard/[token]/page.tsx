@@ -1,16 +1,27 @@
-import { Skeleton } from "@/components/ui/skeleton";
-import { Card, CardContent } from "@/components/ui/card";
+"use client";
 
-const SUPPORTED_TOKENS = ["hype", "mon"];
+import { useState } from "react";
+import {
+  getOnboardingConfig,
+  SUPPORTED_ONBOARDING_TOKENS,
+} from "@/lib/config/onboarding";
+import { OnboardingStepper } from "@/components/onboarding/onboarding-stepper";
+import { WelcomeStep } from "@/components/onboarding/steps/welcome-step";
+import { WalletStep } from "@/components/onboarding/steps/wallet-step";
+import { BridgeStep } from "@/components/onboarding/steps/bridge-step";
+import { TradeStep } from "@/components/onboarding/steps/trade-step";
+import { DeFiStep } from "@/components/onboarding/steps/defi-step";
 
 export default function OnboardingPage({
   params,
 }: {
   params: { token: string };
 }) {
+  const [currentStep, setCurrentStep] = useState(0);
   const tokenSlug = params.token.toLowerCase();
+  const config = getOnboardingConfig(tokenSlug);
 
-  if (!SUPPORTED_TOKENS.includes(tokenSlug)) {
+  if (!SUPPORTED_ONBOARDING_TOKENS.includes(tokenSlug) || !config) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
         <h1 className="text-4xl font-bold mb-2">Token Not Found</h1>
@@ -23,35 +34,23 @@ export default function OnboardingPage({
     );
   }
 
+  const goNext = () => setCurrentStep((s) => Math.min(s + 1, 4));
+
+  const steps = [
+    <WelcomeStep key="welcome" config={config} onNext={goNext} />,
+    <WalletStep key="wallet" config={config} onNext={goNext} />,
+    <BridgeStep key="bridge" config={config} onNext={goNext} />,
+    <TradeStep key="trade" config={config} onNext={goNext} />,
+    <DeFiStep key="defi" config={config} />,
+  ];
+
   return (
     <div className="mx-auto max-w-2xl px-4 py-12 space-y-8">
-      {/* Stepper */}
-      <div className="flex items-center justify-center gap-2">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="flex items-center gap-2">
-            <Skeleton className="h-8 w-8 rounded-full" />
-            {i < 4 && <Skeleton className="h-0.5 w-8" />}
-          </div>
-        ))}
-      </div>
-
-      {/* Step Content */}
-      <Card className="glass-card">
-        <CardContent className="pt-8 pb-8 space-y-6 text-center">
-          <Skeleton className="h-16 w-16 rounded-full mx-auto" />
-          <div className="space-y-2">
-            <Skeleton className="h-7 w-64 mx-auto" />
-            <Skeleton className="h-4 w-96 mx-auto" />
-            <Skeleton className="h-4 w-80 mx-auto" />
-          </div>
-          <div className="space-y-3 pt-4">
-            <Skeleton className="h-12 w-full rounded-lg" />
-            <Skeleton className="h-12 w-full rounded-lg" />
-            <Skeleton className="h-12 w-full rounded-lg" />
-          </div>
-          <Skeleton className="h-11 w-48 mx-auto rounded-lg" />
-        </CardContent>
-      </Card>
+      <OnboardingStepper
+        currentStep={currentStep}
+        onStepClick={setCurrentStep}
+      />
+      {steps[currentStep]}
     </div>
   );
 }

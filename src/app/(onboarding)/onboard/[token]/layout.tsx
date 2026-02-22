@@ -15,9 +15,17 @@ export default function OnboardingLayout({
           </div>
           <span className="text-sm font-bold gradient-text">Tideshift</span>
         </Link>
-        <span className="text-xs text-muted-foreground">
-          Powered by Sunrise
-        </span>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/"
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Dashboard
+          </Link>
+          <span className="text-xs text-muted-foreground">
+            Powered by Sunrise
+          </span>
+        </div>
       </header>
       <main className="flex-1">{children}</main>
       <footer className="border-t border-border/50 py-4 text-center text-xs text-muted-foreground">
