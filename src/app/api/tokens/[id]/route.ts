@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
 import { getTokenDetail } from "@/lib/data";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export async function GET(
   _request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const token = getTokenDetail(params.id);
+  const { id } = await params;
+  const token = await getTokenDetail(id);
 
   if (!token) {
     return NextResponse.json(

@@ -1,15 +1,27 @@
 import {
-  DEMO_CANDIDATES,
-  DEMO_MIGRATED,
-  getBridgeData,
-  getSearchData,
-  getSocialData,
-  getMarketData,
-  getWalletOverlap,
+  getBridgeData as getDemoBridge,
+  getSearchData as getDemoSearch,
+  getSocialData as getDemoSocial,
+  getMarketData as getDemoMarket,
+  getWalletOverlap as getDemoWallet,
 } from "./demo";
+import {
+  fetchMarketData,
+  fetchSocialData,
+  fetchBridgeData,
+  fetchSearchIntent,
+  fetchProtocolTvl,
+  estimateWalletOverlap,
+} from "./providers";
+import { discoverMigrationCandidates, getAlreadyMigratedTokens } from "./token-discovery";
 import { calculateMDS } from "@/lib/scoring/mds";
 import type { MigrationDemandScore } from "@/lib/types/scoring";
 import type { TokenCandidate, MigratedToken } from "@/lib/config/tokens";
+import type { TokenBridgeData } from "./demo/bridge-volumes";
+import type { TokenSearchData } from "./demo/search-intent";
+import type { TokenSocialData } from "./demo/social-signals";
+import type { TokenMarketData } from "./demo/market-data";
+import type { TokenWalletOverlap } from "./demo/wallet-overlap";
 
 export interface TokenWithScore extends TokenCandidate {
   mds: MigrationDemandScore;
@@ -45,6 +57,7 @@ export interface TokenDetail extends TokenWithScore {
     demandMentions: number;
     influencerMentions: number;
   };
+  dataSource: "live" | "demo";
 }
 
 export interface AggregateStats {
@@ -54,55 +67,124 @@ export interface AggregateStats {
   totalBridgeVolume7d: number;
   topDemandToken: { symbol: string; score: number };
   risingCount: number;
+  dataSource: "live" | "mixed" | "demo";
+  lastUpdated: string;
 }
 
-function scoreToken(token: TokenCandidate): TokenWithScore | null {
-  const bridge = getBridgeData(token.id);
-  const search = getSearchData(token.id);
-  const social = getSocialData(token.id);
-  const market = getMarketData(token.id);
-  const wallet = getWalletOverlap(token.id);
+// --- Signal fetching with live→demo fallback ---
+
+async function fetchSignals(token: TokenCandidate): Promise<{
+  bridge: TokenBridgeData;
+  search: TokenSearchData;
+  social: TokenSocialData;
+  market: TokenMarketData;
+  wallet: TokenWalletOverlap;
+  liveCount: number;
+} | null> {
+  let liveCount = 0;
+
+  // Fetch all signals in parallel — live providers first, demo fallback
+  const [marketResult, bridgeResult, searchResult, socialResult] = await Promise.allSettled([
+    fetchMarketData(token.id, token.coingeckoId),
+    fetchBridgeData(token.id, token.symbol),
+    fetchSearchIntent(token.id, token.symbol, 50),
+    fetchSocialData(token.id, token.coingeckoId, token.symbol),
+  ]);
+
+  // Market data
+  let market = marketResult.status === "fulfilled" ? marketResult.value : null;
+  if (market) {
+    // Supplement TVL from DefiLlama if CoinGecko returned 0
+    if (market.tvl === 0) {
+      const tvl = await fetchProtocolTvl(token.coingeckoId, token.name).catch(() => null);
+      if (tvl) market = { ...market, tvl };
+    }
+    liveCount++;
+  } else {
+    market = getDemoMarket(token.id) ?? null;
+  }
+
+  // Bridge data
+  let bridge = bridgeResult.status === "fulfilled" ? bridgeResult.value : null;
+  if (bridge) liveCount++;
+  else bridge = getDemoBridge(token.id) ?? null;
+
+  // Search intent
+  let search = searchResult.status === "fulfilled" ? searchResult.value : null;
+  if (search) liveCount++;
+  else search = getDemoSearch(token.id) ?? null;
+
+  // Social data
+  let social = socialResult.status === "fulfilled" ? socialResult.value : null;
+  if (social) liveCount++;
+  else social = getDemoSocial(token.id) ?? null;
+
+  // Wallet overlap — uses heuristic from other signals
+  let wallet = estimateWalletOverlap(
+    token.id,
+    token.originChain,
+    token.category,
+    market,
+    bridge
+  );
+  if (wallet) liveCount++;
+  else wallet = getDemoWallet(token.id) ?? null;
 
   if (!bridge || !search || !social || !market || !wallet) return null;
 
-  const mds = calculateMDS(token.id, { bridge, search, social, market, wallet });
-
-  return {
-    ...token,
-    mds,
-    marketCap: market.marketCap,
-    price: market.price,
-    volume24h: market.volume24h,
-    change7d: market.change7d,
-    bridgeVolume7d: bridge.total7d,
-    searchTrend: search.trend,
-  };
+  return { bridge, search, social, market, wallet, liveCount };
 }
 
-export function getTokenCandidates(): TokenWithScore[] {
-  return DEMO_CANDIDATES
-    .map(scoreToken)
-    .filter((t): t is TokenWithScore => t !== null)
+// --- Public API ---
+
+export async function getTokenCandidates(): Promise<TokenWithScore[]> {
+  const candidates = await discoverMigrationCandidates();
+
+  const results = await Promise.allSettled(
+    candidates.map(async (token) => {
+      const signals = await fetchSignals(token);
+      if (!signals) return null;
+
+      const { bridge, search, social, market, wallet } = signals;
+      const mds = calculateMDS(token.id, { bridge, search, social, market, wallet });
+
+      return {
+        ...token,
+        mds,
+        marketCap: market.marketCap,
+        price: market.price,
+        volume24h: market.volume24h,
+        change7d: market.change7d,
+        bridgeVolume7d: bridge.total7d,
+        searchTrend: search.trend,
+      } as TokenWithScore;
+    })
+  );
+
+  return results
+    .filter(
+      (r): r is PromiseFulfilledResult<TokenWithScore> =>
+        r.status === "fulfilled" && r.value !== null
+    )
+    .map((r) => r.value)
     .sort((a, b) => b.mds.totalScore - a.mds.totalScore);
 }
 
 export function getMigratedTokens(): MigratedToken[] {
-  return DEMO_MIGRATED;
+  return getAlreadyMigratedTokens();
 }
 
-export function getTokenDetail(id: string): TokenDetail | null {
-  const token = DEMO_CANDIDATES.find((t) => t.id === id);
+export async function getTokenDetail(id: string): Promise<TokenDetail | null> {
+  const candidates = await discoverMigrationCandidates();
+  const token = candidates.find((t) => t.id === id);
   if (!token) return null;
 
-  const bridge = getBridgeData(id);
-  const search = getSearchData(id);
-  const social = getSocialData(id);
-  const market = getMarketData(id);
-  const wallet = getWalletOverlap(id);
+  const signals = await fetchSignals(token);
+  if (!signals) return null;
 
-  if (!bridge || !search || !social || !market || !wallet) return null;
-
+  const { bridge, search, social, market, wallet, liveCount } = signals;
   const mds = calculateMDS(id, { bridge, search, social, market, wallet });
+  const dataSource = liveCount >= 3 ? "live" : "demo";
 
   return {
     ...token,
@@ -136,11 +218,27 @@ export function getTokenDetail(id: string): TokenDetail | null {
       demandMentions: social.demandMentions,
       influencerMentions: social.influencerMentions,
     },
+    dataSource,
   };
 }
 
-export function getAggregateStats(): AggregateStats {
-  const tokens = getTokenCandidates();
+export async function getAggregateStats(): Promise<AggregateStats> {
+  const tokens = await getTokenCandidates();
+  const migrated = getMigratedTokens();
+
+  if (tokens.length === 0) {
+    return {
+      candidateCount: 0,
+      migratedCount: migrated.length,
+      avgMDS: 0,
+      totalBridgeVolume7d: 0,
+      topDemandToken: { symbol: "N/A", score: 0 },
+      risingCount: 0,
+      dataSource: "demo",
+      lastUpdated: new Date().toISOString(),
+    };
+  }
+
   const totalBridge = tokens.reduce((sum, t) => sum + t.bridgeVolume7d, 0);
   const avgMDS = Math.round(
     tokens.reduce((sum, t) => sum + t.mds.totalScore, 0) / tokens.length
@@ -150,10 +248,12 @@ export function getAggregateStats(): AggregateStats {
 
   return {
     candidateCount: tokens.length,
-    migratedCount: DEMO_MIGRATED.length,
+    migratedCount: migrated.length,
     avgMDS,
     totalBridgeVolume7d: totalBridge,
     topDemandToken: { symbol: top.symbol, score: top.mds.totalScore },
     risingCount,
+    dataSource: "live",
+    lastUpdated: new Date().toISOString(),
   };
 }
