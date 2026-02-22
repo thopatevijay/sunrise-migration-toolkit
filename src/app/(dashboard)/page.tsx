@@ -10,12 +10,26 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight } from "lucide-react";
 import { ONBOARDING_CONFIGS } from "@/lib/config/onboarding";
+import { FadeIn } from "@/components/shared/motion";
 
 export default function DashboardPage() {
   const { candidates, migrated, stats, isLoading } = useTokens();
 
   return (
     <div className="space-y-6">
+      {/* Hero */}
+      <FadeIn>
+        <div className="rounded-xl bg-gradient-to-r from-purple-500/10 via-transparent to-cyan-500/10 border border-white/5 p-6">
+          <h1 className="text-2xl font-bold">
+            <span className="gradient-text">Demand Discovery</span> for Token Migrations
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
+            Tideshift ranks tokens by real migration demand — bridge outflows, search intent,
+            social signals, and wallet overlap — so Sunrise can prioritize the highest-signal candidates.
+          </p>
+        </div>
+      </FadeIn>
+
       <StatsBar stats={stats} isLoading={isLoading} />
       <MigratedBanner tokens={migrated} isLoading={isLoading} />
       <DemandChart tokens={candidates} isLoading={isLoading} />
