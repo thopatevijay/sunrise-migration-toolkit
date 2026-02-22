@@ -4,6 +4,8 @@
 
 Built for the [Sunrise](https://sunrisedefi.com) Migrations track at the [Solana Graveyard Hackathon](https://solana.com/graveyard-hack).
 
+**[Live Demo](https://tideshift.vercel.app)** | Works in demo mode — no API keys required.
+
 ---
 
 ## Problem
@@ -268,11 +270,27 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) to see the application.
 
+> **Note:** The app works fully in demo mode with zero API keys configured. All data is realistic but hardcoded. Add API keys in `.env` to enable live data from Wormhole, Jupiter, CoinGecko, etc.
+
 ---
 
 ## Demo
 
-> Video walkthrough and live demo link will be added before submission.
+**[Live Demo: tideshift.vercel.app](https://tideshift.vercel.app)**
+
+The app runs in demo mode with realistic sample data for 12 candidate tokens and 4 migrated tokens. No API keys needed.
+
+### Key Pages
+
+| Page | URL | Description |
+|------|-----|-------------|
+| Dashboard | [/](https://tideshift.vercel.app/) | Token rankings, MDS scores, bridge outflow charts, search trends |
+| Token Detail | [/tokens/ondo](https://tideshift.vercel.app/tokens/ondo) | Radar chart, signal analysis, price chart, migration readiness |
+| Proposals | [/proposals](https://tideshift.vercel.app/proposals) | Saved migration proposals with copy/share |
+| Onboarding (HYPE) | [/onboard/hype](https://tideshift.vercel.app/onboard/hype) | 5-step guided migration: wallet → bridge → trade → DeFi |
+| Onboarding (MON) | [/onboard/mon](https://tideshift.vercel.app/onboard/mon) | Same flow, different token branding |
+
+> Demo video will be added before submission.
 
 ---
 
@@ -284,6 +302,7 @@ Open [http://localhost:3000](http://localhost:3000) to see the application.
 
 ## Links
 
+- [Live Demo](https://tideshift.vercel.app)
 - [Sunrise](https://sunrisedefi.com)
 - [Solana Graveyard Hackathon](https://solana.com/graveyard-hack)
 - [Wormhole NTT Documentation](https://wormhole.com/docs/products/token-transfers/native-token-transfers/)
