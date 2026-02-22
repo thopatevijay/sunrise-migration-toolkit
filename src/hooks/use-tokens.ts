@@ -11,12 +11,13 @@ interface TokensResponse {
 }
 
 export function useTokens() {
-  const { data, error, isLoading } = useSWR<TokensResponse>(
+  const { data, error, isLoading, mutate } = useSWR<TokensResponse>(
     "/api/tokens",
     fetcher,
     {
       revalidateOnFocus: false,
       dedupingInterval: 60000,
+      refreshInterval: 300_000, // 5 min auto-refresh
     }
   );
 
@@ -26,16 +27,18 @@ export function useTokens() {
     stats: data?.stats,
     isLoading,
     error,
+    refresh: mutate,
   };
 }
 
 export function useToken(id: string) {
-  const { data, error, isLoading } = useSWR<TokenDetail>(
+  const { data, error, isLoading, mutate } = useSWR<TokenDetail>(
     id ? `/api/tokens/${id}` : null,
     fetcher,
     {
       revalidateOnFocus: false,
-      dedupingInterval: 60000,
+      dedupingInterval: 30000,
+      refreshInterval: 60_000, // 1 min for detail page (prices update faster)
     }
   );
 
@@ -43,5 +46,6 @@ export function useToken(id: string) {
     token: data,
     isLoading,
     error,
+    refresh: mutate,
   };
 }
