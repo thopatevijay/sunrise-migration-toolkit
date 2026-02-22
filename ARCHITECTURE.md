@@ -4,58 +4,123 @@
 
 Tideshift consists of two main products sharing a common data layer:
 
-1. **Demand Discovery Dashboard** — identifies and ranks token migration candidates
+1. **Demand Discovery Dashboard** — identifies and ranks token migration candidates using real API data
 2. **Community Onboarding Flow** — white-label onboarding for migrated token communities
 
 ## Directory Structure
 
 ```
-tideshift/
-├── app/                          # Next.js App Router
-│   ├── layout.tsx               # Root layout
-│   ├── page.tsx                 # Landing page
-│   ├── (dashboard)/             # Demand Discovery Dashboard
-│   │   ├── page.tsx             # Main dashboard view
-│   │   ├── tokens/
-│   │   │   └── [id]/
-│   │   │       └── page.tsx     # Individual token detail
-│   │   └── proposals/
-│   │       └── page.tsx         # Migration proposal builder
-│   └── (onboarding)/            # Community Onboarding Flow
-│       └── [token]/
-│           ├── page.tsx         # Onboarding landing
-│           ├── wallet/
-│           │   └── page.tsx     # Wallet setup step
-│           ├── bridge/
-│           │   └── page.tsx     # Bridge flow step
-│           ├── trade/
-│           │   └── page.tsx     # Trading venues step
-│           └── defi/
-│               └── page.tsx     # DeFi opportunities step
-├── lib/
-│   ├── scoring/
-│   │   ├── mds.ts               # Migration Demand Score calculator
-│   │   ├── weights.ts           # Signal weight configuration
-│   │   └── types.ts             # Scoring types
-│   ├── data/
-│   │   ├── bridge.ts            # Bridge volume data (Wormhole, deBridge)
-│   │   ├── dex.ts               # DEX search intent (Jupiter, Birdeye)
-│   │   ├── social.ts            # Social signal aggregation
-│   │   ├── onchain.ts           # On-chain analytics (Helius)
-│   │   └── market.ts            # Market data (CoinGecko, DefiLlama)
-│   ├── analytics/
-│   │   ├── onboarding.ts        # Onboarding funnel tracking
-│   │   └── migration-health.ts  # Post-migration metrics
-│   └── config/
-│       ├── tokens.ts            # Token registry & configurations
-│       └── chains.ts            # Supported chain configurations
+src/
+├── app/
+│   ├── layout.tsx                    # Root layout (DM Sans + JetBrains Mono, ThemeProvider)
+│   ├── page.tsx                      # Landing page
+│   ├── error.tsx                     # Error boundary
+│   ├── not-found.tsx                 # 404 page
+│   ├── globals.css                   # Dark theme, glassmorphism, gradients
+│   ├── (dashboard)/                  # Demand Discovery Dashboard
+│   │   ├── layout.tsx                # Sidebar + header + demo banner
+│   │   ├── loading.tsx               # Skeleton loading state
+│   │   ├── page.tsx                  # Main dashboard (stats, table, charts, funnel)
+│   │   ├── tokens/[id]/page.tsx      # Token detail (radar, signals, proposal)
+│   │   └── proposals/page.tsx        # Saved migration proposals
+│   ├── (onboarding)/onboard/[token]/ # Community Onboarding Flow
+│   │   ├── layout.tsx                # Full-width branded layout
+│   │   ├── loading.tsx               # Loading state
+│   │   └── page.tsx                  # 5-step stepper (single page, not multi-route)
+│   └── api/tokens/
+│       ├── route.ts                  # GET /api/tokens (all candidates + stats)
+│       └── [id]/route.ts             # GET /api/tokens/:id (single token detail)
 ├── components/
-│   ├── dashboard/               # Dashboard-specific components
-│   ├── onboarding/              # Onboarding flow components
-│   └── shared/                  # Shared UI components
-├── public/                      # Static assets
-├── .env.example                 # Required environment variables
-└── .dev-refs.md                 # Deployed addresses, endpoints
+│   ├── dashboard/
+│   │   ├── stats-bar.tsx             # 4 KPI cards with animated counters
+│   │   ├── token-table.tsx           # Ranked, sortable, filterable token table
+│   │   ├── demand-chart.tsx          # Tabbed charts (bridge outflows, search, MDS)
+│   │   ├── migrated-banner.tsx       # Horizontal scroll of migrated tokens
+│   │   ├── sparkline.tsx             # Tiny inline trend chart
+│   │   ├── token-detail/
+│   │   │   ├── token-header.tsx      # Hero with MDS score ring
+│   │   │   ├── score-breakdown.tsx   # Radar chart + signal bars
+│   │   │   ├── signal-cards.tsx      # 5 expandable signal detail cards
+│   │   │   ├── price-chart.tsx       # 30-day price area chart
+│   │   │   ├── migration-readiness.tsx # NTT/team/bridge checklist
+│   │   │   └── similar-tokens.tsx    # Related token cards
+│   │   └── proposal-builder/
+│   │       └── proposal-form.tsx     # Proposal dialog + preview + clipboard
+│   ├── onboarding/
+│   │   ├── onboarding-stepper.tsx    # 5-step progress bar
+│   │   ├── onboarding-analytics.tsx  # Funnel visualization component
+│   │   └── steps/
+│   │       ├── welcome-step.tsx      # Welcome + "Get Started"
+│   │       ├── wallet-step.tsx       # Phantom/Backpack/Solflare wallet setup
+│   │       ├── bridge-step.tsx       # Bridge via Sunrise link
+│   │       ├── trade-step.tsx        # Jupiter swap link
+│   │       └── defi-step.tsx         # DeFi opportunities + completion
+│   ├── shared/
+│   │   ├── chain-badge.tsx           # Chain logo + name
+│   │   ├── demo-banner.tsx           # Data source indicator (live/mixed/demo)
+│   │   ├── mds-badge.tsx             # Score-colored badge
+│   │   ├── motion.tsx                # Framer Motion animation wrappers
+│   │   ├── score-ring.tsx            # Circular SVG MDS progress
+│   │   └── trend-indicator.tsx       # Up/down/flat arrow
+│   ├── app-header.tsx                # Page title + data freshness + network badge
+│   ├── app-sidebar.tsx               # Navigation sidebar
+│   ├── theme-provider.tsx            # next-themes dark mode
+│   └── ui/                           # shadcn/ui primitives
+├── hooks/
+│   ├── use-mobile.tsx                # Responsive breakpoint hook
+│   └── use-tokens.ts                 # SWR hooks (5min dashboard, 1min detail refresh)
+├── lib/
+│   ├── data/
+│   │   ├── index.ts                  # Data facade — async, live→demo fallback
+│   │   ├── token-discovery.ts        # Candidate registry + validation
+│   │   ├── providers/                # Live API provider clients
+│   │   │   ├── cache.ts              # TTL-based in-memory cache (500 entries)
+│   │   │   ├── http.ts              # Shared fetch helper (timeout + retry)
+│   │   │   ├── coingecko.ts          # Market data + social proxy
+│   │   │   ├── wormhole.ts           # Bridge outflow data (WormholeScan)
+│   │   │   ├── defillama.ts          # TVL, protocol data, bridge volumes
+│   │   │   ├── jupiter.ts            # Search intent proxy + prices
+│   │   │   ├── debridge.ts           # Supplemental bridge data
+│   │   │   ├── wallet-heuristic.ts   # Wallet overlap estimation
+│   │   │   └── index.ts              # Re-exports all providers
+│   │   └── demo/                     # Demo data (fallback only)
+│   │       ├── index.ts              # Re-exports + DEMO_MODE flag
+│   │       ├── tokens.ts             # 12 candidates + 4 migrated tokens
+│   │       ├── bridge-volumes.ts     # 30-day bridge timeseries
+│   │       ├── search-intent.ts      # 14-day search trends
+│   │       ├── social-signals.ts     # Tweet counts + sentiment
+│   │       ├── market-data.ts        # Price, mcap, volume, 30d history
+│   │       └── wallet-overlap.ts     # Overlap % + wallet categories
+│   ├── scoring/
+│   │   ├── mds.ts                    # calculateMDS() — normalize, weight, sum
+│   │   ├── normalizers.ts            # 5 signal normalizers (0-100)
+│   │   └── weights.ts               # Signal weights + labels
+│   ├── analytics/
+│   │   └── onboarding.ts            # Step tracking + funnel (localStorage)
+│   ├── types/
+│   │   ├── scoring.ts                # MDS interfaces + score utilities
+│   │   └── proposals.ts              # Proposal storage (localStorage)
+│   ├── config/
+│   │   ├── tokens.ts                 # TokenCandidate, MigratedToken types
+│   │   ├── chains.ts                 # 9 chain definitions
+│   │   └── onboarding.ts            # Per-token onboarding configs (HYPE, MON)
+│   └── utils.ts                      # formatUSD, formatNumber, cn, etc.
+```
+
+## Data Flow
+
+```
+Live APIs (CoinGecko, WormholeScan, DefiLlama, Jupiter, deBridge)
+  ↓ try/catch with demo fallback
+Provider Clients (src/lib/data/providers/)
+  ↓ TTL-cached
+Data Facade (src/lib/data/index.ts)
+  ↓ MDS scoring engine
+API Routes (/api/tokens, /api/tokens/:id)
+  ↓ JSON response
+SWR Hooks (auto-refresh: 5min dashboard, 1min detail)
+  ↓
+React Components
 ```
 
 ## Migration Demand Score (MDS)
@@ -65,29 +130,29 @@ The scoring engine aggregates five signal categories into a single score per tok
 ### Signal Categories
 
 **1. Bridge Outflow Volume (weight: 0.30)**
-- Source: Wormhole Explorer API, deBridge API
-- Metric: SOL-denominated value leaving Solana to buy this token on other chains
-- Higher outflow = Solana users want this token but can't get it locally
+- Source: WormholeScan `top-assets-by-volume` API
+- Metric: Cross-chain bridge volume for this token (7d + 30d)
+- Higher outflow = active cross-chain demand for this asset
 
 **2. Search Intent (weight: 0.25)**
-- Source: Jupiter terminal search data, Birdeye search trends
-- Metric: Frequency of searches for a token that doesn't exist on Solana
-- Direct signal of user demand
+- Source: Jupiter Lite `token/v2/search` API
+- Metric: Whether token exists on Solana/Jupiter — absence = unmet demand
+- Market cap rank modulates estimated search volume
 
 **3. Social Demand (weight: 0.20)**
-- Source: X/Twitter API, filtered by Solana community accounts
-- Metric: Mentions requesting/discussing a token's availability on Solana
-- Sentiment analysis to separate demand from general discussion
+- Source: CoinGecko community data (twitter followers, sentiment votes, reddit)
+- Metric: Community size and sentiment as proxy for migration demand
+- Sentiment normalization: CoinGecko % → -1 to +1 scale
 
 **4. Origin Chain Health (weight: 0.15)**
-- Source: CoinGecko, DefiLlama
-- Metrics: 24h volume, TVL, holder count, market cap, age
+- Source: CoinGecko market data + DefiLlama protocols
+- Metrics: Market cap, 24h volume, TVL, holder count
 - Filters out dead/dying tokens — only surface healthy candidates
 
 **5. Ecosystem Wallet Overlap (weight: 0.10)**
-- Source: Helius, origin chain explorers
-- Metric: Percentage of the token's holders who also have active Solana wallets
-- Higher overlap = easier community migration
+- Source: Heuristic model using bridge volume, chain proximity, category affinity
+- Metric: Estimated percentage of token holders with active Solana wallets
+- Chain proximity scores: Arbitrum (18%) > Optimism (16%) > Ethereum (15%) > Base (14%)
 
 ### Score Calculation
 
@@ -102,63 +167,61 @@ Score ranges:
   0-29:   Low/no demand — not ready
 ```
 
+## API Provider Architecture
+
+### Tier 1: Free, No Auth Required
+
+| API | Base URL | Data | Rate Limit |
+|-----|----------|------|------------|
+| WormholeScan | `api.wormholescan.io/api/v1` | Bridge volumes, scorecards | 1000/min |
+| DefiLlama | `api.llama.fi` / `bridges.llama.fi` | TVL, protocols, bridge volumes | ~100/min |
+| Jupiter Lite | `lite-api.jup.ag` | Token search, prices | 60/min |
+| deBridge | `dln.debridge.finance/v1.0` | Supported chains, orders | Generous |
+
+### Tier 2: Free with API Key (optional)
+
+| API | Base URL | Data | Rate Limit |
+|-----|----------|------|------------|
+| CoinGecko | `api.coingecko.com/api/v3` | Market data, social proxy | 10-30/min (30 with key) |
+| Helius | `mainnet.helius-rpc.com` | Wallet analysis (DAS) | 10 rps with key |
+
+### Caching Strategy
+
+| Data Type | TTL | Reason |
+|-----------|-----|--------|
+| Market data | 2 min | Prices change frequently |
+| Bridge data | 5 min | Volume updates regularly |
+| Search data | 10 min | Search intent is stable |
+| Social data | 15 min | Community metrics change slowly |
+| Wallet overlap | 30 min | Heuristic, infrequent change |
+| Protocol list | 1 hour | Protocols don't change often |
+
+### Error Handling
+
+Every provider follows the same pattern:
+1. Check in-memory cache → return if valid
+2. Call live API with timeout (10s) + 1 retry on 5xx
+3. On success → cache result → return
+4. On failure → return `null` (data facade falls back to demo data)
+
 ## Onboarding Flow Architecture
+
+### Single-Page Stepper (not multi-route)
+
+The onboarding flow is a single page with 5 steps managed via React state:
+1. Welcome → 2. Wallet → 3. Bridge → 4. Trade → 5. DeFi
+
+### Analytics Funnel
+
+Step completion tracked via localStorage:
+- Each step records: `{ token, step, stepName, timestamp, sessionId }`
+- Funnel visualization on dashboard shows conversion rates
+- Demo funnel data shown when no real sessions exist yet
 
 ### White-Label Configuration
 
-Each token onboarding is configured via a JSON spec:
-
-```typescript
-interface OnboardingConfig {
-  token: {
-    symbol: string;
-    name: string;
-    originChain: string;
-    solanaAddress: string;
-    logo: string;
-  };
-  branding: {
-    primaryColor: string;
-    accentColor: string;
-    heroImage?: string;
-  };
-  bridges: {
-    sunrise: boolean; // primary
-    fallback?: string[]; // alternative bridges
-  };
-  tradingVenues: string[]; // jupiter, raydium, orca, etc.
-  defiOpportunities: {
-    protocol: string;
-    type: 'lending' | 'lp' | 'staking';
-    url: string;
-  }[];
-}
-```
-
-### Funnel Analytics
-
-Track conversion at each step:
-
-```
-Landing → Wallet Setup → Bridge → First Trade → DeFi
-  100%      65%           40%       30%           15%
-```
-
-Each step logs anonymized events to measure:
-- Drop-off rate per step
-- Average time per step
-- Most common wallet choice
-- Bridge completion rate
-- First trade venue preference
-
-## API Dependencies
-
-| API | Purpose | Rate Limit | Auth |
-|-----|---------|-----------|------|
-| Jupiter API | Search intent, swap routes | 60 req/min | API key |
-| Birdeye API | Token discovery, market data | 100 req/min | API key |
-| Helius RPC | On-chain data, wallet analysis | Based on plan | API key |
-| CoinGecko API | Market data, token metadata | 30 req/min | Free tier |
-| DefiLlama API | TVL, protocol data | No limit | None |
-| Wormhole Explorer | Bridge volume data | TBD | None |
-| X/Twitter API | Social signals | Based on plan | OAuth |
+Per-token configs in `lib/config/onboarding.ts` define:
+- Branding colors and gradients
+- Bridge routes and configurations
+- Trading venue links (Jupiter, etc.)
+- DeFi opportunities with APYs

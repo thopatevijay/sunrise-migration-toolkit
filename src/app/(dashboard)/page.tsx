@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowRight } from "lucide-react";
 import { ONBOARDING_CONFIGS } from "@/lib/config/onboarding";
 import { FadeIn } from "@/components/shared/motion";
+import { OnboardingAnalytics } from "@/components/onboarding/onboarding-analytics";
 
 export default function DashboardPage() {
   const { candidates, migrated, stats, isLoading } = useTokens();
@@ -34,6 +35,9 @@ export default function DashboardPage() {
       <MigratedBanner tokens={migrated} isLoading={isLoading} />
       <DemandChart tokens={candidates} isLoading={isLoading} />
       <TokenTable tokens={candidates} isLoading={isLoading} />
+
+      {/* Onboarding Analytics */}
+      <OnboardingAnalytics />
 
       {/* Onboarding Flows */}
       <Card className="glass-card">
