@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState, useEffect } from "react";
 import { AnimatePresence } from "framer-motion";
 import {
   getOnboardingConfig,
@@ -20,11 +20,10 @@ const STEP_NAMES = ["Welcome", "Wallet", "Bridge", "Trade", "DeFi"];
 export default function OnboardingPage({
   params,
 }: {
-  params: Promise<{ token: string }>;
+  params: { token: string };
 }) {
-  const resolvedParams = use(params);
   const [currentStep, setCurrentStep] = useState(0);
-  const tokenSlug = resolvedParams.token.toLowerCase();
+  const tokenSlug = params.token.toLowerCase();
   const config = getOnboardingConfig(tokenSlug);
 
   // Track step completion when step changes
@@ -37,7 +36,7 @@ export default function OnboardingPage({
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
         <h1 className="text-4xl font-bold mb-2">Token Not Found</h1>
         <p className="text-muted-foreground max-w-md">
-          Onboarding for <span className="font-mono">{resolvedParams.token}</span> is
+          Onboarding for <span className="font-mono">{params.token}</span> is
           not available yet. Check back after this token migrates to Solana via
           Sunrise.
         </p>
