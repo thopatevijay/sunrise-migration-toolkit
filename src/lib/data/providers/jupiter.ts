@@ -1,5 +1,5 @@
 import { cache, TTL } from "./cache";
-import { fetchJson } from "./http";
+import { trackedFetch } from "./health";
 import type { TokenSearchData, SearchIntentPoint } from "@/lib/types/signals";
 
 const LITE_BASE = "https://lite-api.jup.ag";
@@ -39,7 +39,8 @@ export async function fetchSearchIntent(
   if (cached) return cached;
 
   try {
-    const result = await fetchJson<JupiterToken[]>(
+    const result = await trackedFetch<JupiterToken[]>(
+      "jupiter",
       `${LITE_BASE}/tokens/v2/search?query=${encodeURIComponent(symbol)}`
     );
 
@@ -101,7 +102,8 @@ export async function fetchJupiterPrice(
   if (cached) return cached;
 
   try {
-    const result = await fetchJson<JupiterPriceResponse>(
+    const result = await trackedFetch<JupiterPriceResponse>(
+      "jupiter",
       `${LITE_BASE}/price/v3?ids=${mintAddress}`
     );
 

@@ -1,5 +1,5 @@
 import { cache, TTL } from "./cache";
-import { fetchJson } from "./http";
+import { trackedFetch } from "./health";
 import type { TokenBridgeData, BridgeVolumePoint } from "@/lib/types/signals";
 
 const BASE = "https://api.wormholescan.io/api/v1";
@@ -64,10 +64,12 @@ export async function fetchBridgeData(
   try {
     // Strategy 1: Check WormholeScan top-assets for exact token match
     const [res7d, res30d] = await Promise.all([
-      fetchJson<WormholeTopAssetsResponse>(
+      trackedFetch<WormholeTopAssetsResponse>(
+        "wormholescan",
         `${BASE}/top-assets-by-volume?timeSpan=7d`
       ),
-      fetchJson<WormholeTopAssetsResponse>(
+      trackedFetch<WormholeTopAssetsResponse>(
+        "wormholescan",
         `${BASE}/top-assets-by-volume?timeSpan=30d`
       ),
     ]);
@@ -137,7 +139,7 @@ export async function fetchScorecards(): Promise<WormholeScorecards | null> {
   if (cached) return cached;
 
   try {
-    const result = await fetchJson<WormholeScorecard>(`${BASE}/scorecards`);
+    const result = await trackedFetch<WormholeScorecard>("wormholescan", `${BASE}/scorecards`);
     if (!result.data) return null;
 
     const sc = result.data;

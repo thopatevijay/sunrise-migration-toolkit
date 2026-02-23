@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getTokenCandidates, getMigratedTokens, getAggregateStats } from "@/lib/data";
+import { getHealthSnapshot } from "@/lib/data/providers";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -16,6 +17,7 @@ export async function GET() {
       candidates,
       migrated,
       stats,
+      providerHealth: getHealthSnapshot(),
     });
   } catch (error) {
     console.error("[api/tokens] Error:", error);

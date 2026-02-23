@@ -21,6 +21,8 @@ import {
   SidebarMenuItem,
   SidebarFooter,
 } from "@/components/ui/sidebar";
+import { ApiHealthBoard } from "@/components/sidebar/api-health-board";
+import { useTokens } from "@/hooks/use-tokens";
 
 const navItems = [
   { title: "Dashboard", href: "/", icon: BarChart3 },
@@ -35,6 +37,7 @@ const onboardingItems = [
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const { providerHealth } = useTokens();
 
   return (
     <Sidebar variant="inset" collapsible="icon">
@@ -98,6 +101,8 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+
+      <ApiHealthBoard providers={providerHealth} />
 
       <SidebarFooter className="p-4 group-data-[collapsible=icon]:hidden">
         <div className="glass-card p-3 text-xs text-muted-foreground">

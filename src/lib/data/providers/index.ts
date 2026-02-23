@@ -1,5 +1,7 @@
 export { cache, TTL } from "./cache";
 export { fetchJson } from "./http";
+export { getHealthSnapshot, trackedFetch } from "./health";
+export type { ProviderHealth, ProviderName } from "./health";
 export { fetchBridgeData, fetchScorecards } from "./wormhole";
 export type { WormholeScorecards } from "./wormhole";
 export { fetchProtocolTvl, fetchChainBridgeVolume, fetchSolanaChainTvl } from "./defillama";

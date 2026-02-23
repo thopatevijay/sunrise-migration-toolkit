@@ -1,5 +1,5 @@
 import { cache, TTL } from "./cache";
-import { fetchJson } from "./http";
+import { trackedFetch } from "./health";
 
 const CHAINS_URL = "https://dln.debridge.finance/v1.0/supported-chains-info";
 const ORDERS_URL = "https://stats-api.dln.trade/api/Orders/filteredList";
@@ -39,7 +39,7 @@ export async function fetchDebridgeChains(): Promise<
   if (cached) return cached;
 
   try {
-    const result = await fetchJson<DebridgeSupportedChains>(CHAINS_URL);
+    const result = await trackedFetch<DebridgeSupportedChains>("debridge", CHAINS_URL);
     if (!result.data?.chains) return null;
 
     const chains = Object.values(result.data.chains).map((c) => ({
@@ -63,7 +63,7 @@ export async function fetchRecentOrders(
   if (cached) return cached;
 
   try {
-    const result = await fetchJson<DebridgeOrdersResponse>(ORDERS_URL, {
+    const result = await trackedFetch<DebridgeOrdersResponse>("debridge", ORDERS_URL, {
       method: "POST",
       body: JSON.stringify({
         filter: {},

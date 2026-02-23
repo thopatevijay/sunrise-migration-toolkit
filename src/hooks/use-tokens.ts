@@ -1,6 +1,7 @@
 import useSWR from "swr";
 import type { TokenWithScore, TokenDetail, AggregateStats } from "@/lib/data";
 import type { MigratedToken } from "@/lib/config/tokens";
+import type { ProviderHealth } from "@/lib/data/providers/health";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -8,6 +9,7 @@ interface TokensResponse {
   candidates: TokenWithScore[];
   migrated: MigratedToken[];
   stats: AggregateStats;
+  providerHealth?: ProviderHealth[];
 }
 
 export function useTokens() {
@@ -25,6 +27,7 @@ export function useTokens() {
     candidates: data?.candidates ?? [],
     migrated: data?.migrated ?? [],
     stats: data?.stats,
+    providerHealth: data?.providerHealth ?? [],
     isLoading,
     error,
     refresh: mutate,

@@ -1,5 +1,5 @@
 import { cache, TTL } from "./cache";
-import { fetchJson } from "./http";
+import { trackedFetch } from "./health";
 
 const PROTOCOLS_URL = "https://api.llama.fi/protocols";
 const CHAINS_URL = "https://api.llama.fi/v2/chains";
@@ -79,7 +79,7 @@ export async function fetchChainBridgeVolume(
   if (cached) return cached;
 
   try {
-    const result = await fetchJson<DefiLlamaBridge[]>(BRIDGES_URL);
+    const result = await trackedFetch<DefiLlamaBridge[]>("defillama", BRIDGES_URL);
     if (!result.data) return null;
 
     const chainLower = chainName.toLowerCase();
@@ -109,7 +109,7 @@ export async function fetchSolanaChainTvl(): Promise<number | null> {
   if (cached !== null) return cached;
 
   try {
-    const result = await fetchJson<DefiLlamaChain[]>(CHAINS_URL);
+    const result = await trackedFetch<DefiLlamaChain[]>("defillama", CHAINS_URL);
     if (!result.data) return null;
 
     const solana = result.data.find(
@@ -132,7 +132,7 @@ async function getAllProtocols(): Promise<DefiLlamaProtocol[] | null> {
   const cached = cache.get<DefiLlamaProtocol[]>(cacheKey);
   if (cached) return cached;
 
-  const result = await fetchJson<DefiLlamaProtocol[]>(PROTOCOLS_URL);
+  const result = await trackedFetch<DefiLlamaProtocol[]>("defillama", PROTOCOLS_URL);
   if (!result.data) return null;
 
   cache.set(cacheKey, result.data, TTL.PROTOCOLS);

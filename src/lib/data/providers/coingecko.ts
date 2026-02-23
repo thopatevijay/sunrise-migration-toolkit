@@ -1,5 +1,5 @@
 import { cache, TTL } from "./cache";
-import { fetchJson } from "./http";
+import { trackedFetch } from "./health";
 import type { TokenMarketData } from "@/lib/types/signals";
 import type { TokenSocialData } from "@/lib/types/signals";
 
@@ -82,7 +82,8 @@ export async function fetchBatchMarketData(
 
   try {
     const ids = uncached.map((t) => t.coingeckoId).join(",");
-    const items = await fetchJson<CoinGeckoMarketItem[]>(
+    const items = await trackedFetch<CoinGeckoMarketItem[]>(
+      "coingecko",
       `${BASE}/coins/markets?vs_currency=usd&ids=${ids}&order=market_cap_desc&per_page=${uncached.length}&page=1&sparkline=false&price_change_percentage=7d,30d`,
       { headers: headers() }
     );
@@ -131,11 +132,13 @@ export async function fetchMarketData(
 
   try {
     const [coinResult, chartResult] = await Promise.all([
-      fetchJson<CoinGeckoCoin>(
+      trackedFetch<CoinGeckoCoin>(
+        "coingecko",
         `${BASE}/coins/${coingeckoId}?localization=false&tickers=false&community_data=true&developer_data=false`,
         { headers: headers() }
       ),
-      fetchJson<CoinGeckoMarketChart>(
+      trackedFetch<CoinGeckoMarketChart>(
+        "coingecko",
         `${BASE}/coins/${coingeckoId}/market_chart?vs_currency=usd&days=30`,
         { headers: headers() }
       ),
@@ -187,7 +190,8 @@ export async function fetchSocialData(
   if (cached) return cached;
 
   try {
-    const result = await fetchJson<CoinGeckoCoin>(
+    const result = await trackedFetch<CoinGeckoCoin>(
+      "coingecko",
       `${BASE}/coins/${coingeckoId}?localization=false&tickers=false&community_data=true&developer_data=false`,
       { headers: headers() }
     );
@@ -249,7 +253,8 @@ export async function fetchCoinGeckoPlatforms(
   if (cached) return cached;
 
   try {
-    const result = await fetchJson<CoinGeckoCoin>(
+    const result = await trackedFetch<CoinGeckoCoin>(
+      "coingecko",
       `${BASE}/coins/${coingeckoId}?localization=false&tickers=false&community_data=false&developer_data=false`,
       { headers: headers() }
     );
