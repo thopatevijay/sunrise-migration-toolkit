@@ -6,6 +6,7 @@ import {
   BarChart3,
   Coins,
   FileText,
+  Globe,
   Users,
   Waves,
 } from "lucide-react";
@@ -27,6 +28,7 @@ import { useTokens } from "@/hooks/use-tokens";
 const navItems = [
   { title: "Dashboard", href: "/", icon: BarChart3 },
   { title: "Tokens", href: "/tokens", icon: Coins },
+  { title: "No-Solana", href: "/discovery", icon: Globe },
   { title: "Proposals", href: "/proposals", icon: FileText },
 ];
 
