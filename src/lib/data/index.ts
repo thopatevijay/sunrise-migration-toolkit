@@ -1,11 +1,4 @@
 import {
-  getBridgeData as getDemoBridge,
-  getSearchData as getDemoSearch,
-  getSocialData as getDemoSocial,
-  getMarketData as getDemoMarket,
-  getWalletOverlap as getDemoWallet,
-} from "./demo";
-import {
   fetchMarketData,
   fetchSocialData,
   fetchBridgeData,
@@ -17,11 +10,7 @@ import { discoverMigrationCandidates, getAlreadyMigratedTokens } from "./token-d
 import { calculateMDS } from "@/lib/scoring/mds";
 import type { MigrationDemandScore } from "@/lib/types/scoring";
 import type { TokenCandidate, MigratedToken } from "@/lib/config/tokens";
-import type { TokenBridgeData } from "./demo/bridge-volumes";
-import type { TokenSearchData } from "./demo/search-intent";
-import type { TokenSocialData } from "./demo/social-signals";
-import type { TokenMarketData } from "./demo/market-data";
-import type { TokenWalletOverlap } from "./demo/wallet-overlap";
+import type { TokenBridgeData, TokenSearchData, TokenSocialData, TokenMarketData, TokenWalletOverlap } from "@/lib/types/signals";
 
 export interface TokenWithScore extends TokenCandidate {
   mds: MigrationDemandScore;
@@ -100,27 +89,22 @@ async function fetchSignals(token: TokenCandidate): Promise<{
       if (tvl) market = { ...market, tvl };
     }
     liveCount++;
-  } else {
-    market = getDemoMarket(token.id) ?? null;
   }
 
   // Bridge data
-  let bridge = bridgeResult.status === "fulfilled" ? bridgeResult.value : null;
+  const bridge = bridgeResult.status === "fulfilled" ? bridgeResult.value : null;
   if (bridge) liveCount++;
-  else bridge = getDemoBridge(token.id) ?? null;
 
   // Search intent
-  let search = searchResult.status === "fulfilled" ? searchResult.value : null;
+  const search = searchResult.status === "fulfilled" ? searchResult.value : null;
   if (search) liveCount++;
-  else search = getDemoSearch(token.id) ?? null;
 
   // Social data
-  let social = socialResult.status === "fulfilled" ? socialResult.value : null;
+  const social = socialResult.status === "fulfilled" ? socialResult.value : null;
   if (social) liveCount++;
-  else social = getDemoSocial(token.id) ?? null;
 
   // Wallet overlap — uses heuristic from other signals
-  let wallet = estimateWalletOverlap(
+  const wallet = estimateWalletOverlap(
     token.id,
     token.originChain,
     token.category,
@@ -128,7 +112,6 @@ async function fetchSignals(token: TokenCandidate): Promise<{
     bridge
   );
   if (wallet) liveCount++;
-  else wallet = getDemoWallet(token.id) ?? null;
 
   if (!bridge || !search || !social || !market || !wallet) return null;
 

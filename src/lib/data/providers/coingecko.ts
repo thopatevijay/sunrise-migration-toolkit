@@ -1,7 +1,7 @@
 import { cache, TTL } from "./cache";
 import { fetchJson } from "./http";
-import type { TokenMarketData } from "@/lib/data/demo/market-data";
-import type { TokenSocialData } from "@/lib/data/demo/social-signals";
+import type { TokenMarketData } from "@/lib/types/signals";
+import type { TokenSocialData } from "@/lib/types/signals";
 
 const BASE = "https://api.coingecko.com/api/v3";
 

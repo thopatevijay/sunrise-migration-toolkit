@@ -13,7 +13,7 @@ import type {
   TokenSocialData,
   TokenMarketData,
   TokenWalletOverlap,
-} from "@/lib/data/demo";
+} from "@/lib/types/signals";
 
 interface SignalInputs {
   bridge: TokenBridgeData;

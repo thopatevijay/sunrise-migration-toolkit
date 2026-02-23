@@ -1,6 +1,6 @@
 import { cache, TTL } from "./cache";
 import { fetchJson } from "./http";
-import type { TokenSearchData, SearchIntentPoint } from "@/lib/data/demo/search-intent";
+import type { TokenSearchData, SearchIntentPoint } from "@/lib/types/signals";
 
 const LITE_BASE = "https://lite-api.jup.ag";
 

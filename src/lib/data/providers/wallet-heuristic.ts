@@ -1,7 +1,5 @@
 import { cache, TTL } from "./cache";
-import type { TokenWalletOverlap } from "@/lib/data/demo/wallet-overlap";
-import type { TokenMarketData } from "@/lib/data/demo/market-data";
-import type { TokenBridgeData } from "@/lib/data/demo/bridge-volumes";
+import type { TokenWalletOverlap, TokenMarketData, TokenBridgeData } from "@/lib/types/signals";
 import type { ChainId, TokenCategory } from "@/lib/config/tokens";
 
 // Chain proximity scores: how much overlap between chain's users and Solana

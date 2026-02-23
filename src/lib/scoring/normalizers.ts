@@ -1,4 +1,4 @@
-import type { TokenBridgeData, TokenSearchData, TokenSocialData, TokenMarketData, TokenWalletOverlap } from "@/lib/data/demo";
+import type { TokenBridgeData, TokenSearchData, TokenSocialData, TokenMarketData, TokenWalletOverlap } from "@/lib/types/signals";
 
 /**
  * Normalize a value to 0-100 using min-max scaling with soft caps.

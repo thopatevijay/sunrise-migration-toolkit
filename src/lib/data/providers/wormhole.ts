@@ -1,6 +1,6 @@
 import { cache, TTL } from "./cache";
 import { fetchJson } from "./http";
-import type { TokenBridgeData, BridgeVolumePoint } from "@/lib/data/demo/bridge-volumes";
+import type { TokenBridgeData, BridgeVolumePoint } from "@/lib/types/signals";
 
 const BASE = "https://api.wormholescan.io/api/v1";
 

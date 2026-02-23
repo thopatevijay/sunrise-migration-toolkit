@@ -1,18 +1,10 @@
-import { DEMO_CANDIDATES, DEMO_MIGRATED } from "./demo";
 import { fetchMarketData, fetchBridgeData } from "./providers";
+import { TOKEN_CANDIDATES, MIGRATED_TOKENS } from "@/lib/config/tokens";
 import type { TokenCandidate, MigratedToken } from "@/lib/config/tokens";
-
-// Curated candidate list — these are real tokens we track
-// The list itself is static (these are the tokens we analyze for migration demand)
-// but ALL their data comes from live APIs
-const CANDIDATE_REGISTRY = DEMO_CANDIDATES;
-
-// Migrated tokens are factual — Sunrise has already migrated these
-const MIGRATED_REGISTRY = DEMO_MIGRATED;
 
 export async function discoverMigrationCandidates(): Promise<TokenCandidate[]> {
   // Start with our curated registry
-  const candidates = [...CANDIDATE_REGISTRY];
+  const candidates = [...TOKEN_CANDIDATES];
 
   // Validate each candidate still has market presence via CoinGecko
   // (filters out dead/delisted tokens)
@@ -40,7 +32,7 @@ export async function discoverMigrationCandidates(): Promise<TokenCandidate[]> {
 }
 
 export function getAlreadyMigratedTokens(): MigratedToken[] {
-  return MIGRATED_REGISTRY;
+  return MIGRATED_TOKENS;
 }
 
 // Sort candidates by their bridge activity (tokens with real bridge volume first)
