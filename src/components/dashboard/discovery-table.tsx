@@ -13,12 +13,28 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, ArrowUpDown, Download } from "lucide-react";
+import {
+  Search,
+  ArrowUpDown,
+  Download,
+  ExternalLink,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { TrendIndicator } from "@/components/shared/trend-indicator";
 import { formatUSD } from "@/lib/utils";
 import type { DiscoveryToken } from "@/lib/types/discovery";
 
 type SortKey = "rank" | "marketCap" | "volume24h" | "change7d";
+type PageSize = 25 | 50 | 100 | 200 | "all";
+
+const PAGE_SIZES: { label: string; value: PageSize }[] = [
+  { label: "25", value: 25 },
+  { label: "50", value: 50 },
+  { label: "100", value: 100 },
+  { label: "200", value: 200 },
+  { label: "All", value: "all" },
+];
 
 interface DiscoveryTableProps {
   tokens: DiscoveryToken[];
@@ -27,7 +43,7 @@ interface DiscoveryTableProps {
 
 function downloadCSV(tokens: DiscoveryToken[]) {
   const header =
-    "Rank,Symbol,Name,Market Cap,24h Volume,7d Change %,Origin Chains,Solana Status,CoinGecko ID,Logo URL";
+    "Rank,Symbol,Name,Market Cap,24h Volume,7d Change %,Origin Chains,Solana Status,CoinGecko ID,CoinGecko URL,Logo URL";
   const rows = tokens.map((t) =>
     [
       t.rank,
@@ -39,6 +55,7 @@ function downloadCSV(tokens: DiscoveryToken[]) {
       `"${t.originChains.join(", ")}"`,
       t.solanaStatus,
       t.coingeckoId,
+      `https://www.coingecko.com/en/coins/${t.coingeckoId}`,
       t.logo,
     ].join(",")
   );
@@ -56,6 +73,8 @@ export function DiscoveryTable({ tokens, isLoading }: DiscoveryTableProps) {
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("rank");
   const [sortAsc, setSortAsc] = useState(true);
+  const [pageSize, setPageSize] = useState<PageSize>(50);
+  const [page, setPage] = useState(1);
 
   const filtered = useMemo(() => {
     let result = [...tokens];
@@ -73,11 +92,31 @@ export function DiscoveryTable({ tokens, isLoading }: DiscoveryTableProps) {
     result.sort((a, b) => {
       const aVal = a[sortKey];
       const bVal = b[sortKey];
-      return sortAsc ? (aVal as number) - (bVal as number) : (bVal as number) - (aVal as number);
+      return sortAsc
+        ? (aVal as number) - (bVal as number)
+        : (bVal as number) - (aVal as number);
     });
 
     return result;
   }, [tokens, search, sortKey, sortAsc]);
+
+  // Pagination
+  const effectivePageSize = pageSize === "all" ? filtered.length : pageSize;
+  const totalPages = Math.max(1, Math.ceil(filtered.length / effectivePageSize));
+  const safePage = Math.min(page, totalPages);
+  const startIdx = (safePage - 1) * effectivePageSize;
+  const paged = filtered.slice(startIdx, startIdx + effectivePageSize);
+
+  // Reset to page 1 when search or page size changes
+  const handleSearch = useCallback((value: string) => {
+    setSearch(value);
+    setPage(1);
+  }, []);
+
+  const handlePageSize = useCallback((value: PageSize) => {
+    setPageSize(value);
+    setPage(1);
+  }, []);
 
   const handleSort = useCallback(
     (key: SortKey) => {
@@ -87,6 +126,7 @@ export function DiscoveryTable({ tokens, isLoading }: DiscoveryTableProps) {
         setSortKey(key);
         setSortAsc(key === "rank");
       }
+      setPage(1);
     },
     [sortKey, sortAsc]
   );
@@ -129,13 +169,29 @@ export function DiscoveryTable({ tokens, isLoading }: DiscoveryTableProps) {
           <CardTitle className="text-base">
             No-Solana Tokens ({filtered.length})
           </CardTitle>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
+            {/* Page size selector */}
+            <div className="flex items-center h-9 rounded-md border border-white/10 bg-white/5 overflow-hidden">
+              {PAGE_SIZES.map((ps) => (
+                <button
+                  key={ps.label}
+                  onClick={() => handlePageSize(ps.value)}
+                  className={`px-2.5 h-full text-xs transition-colors ${
+                    pageSize === ps.value
+                      ? "bg-white/15 text-foreground font-medium"
+                      : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+                  }`}
+                >
+                  {ps.label}
+                </button>
+              ))}
+            </div>
             <div className="relative">
               <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
               <Input
                 placeholder="Search tokens or chains..."
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => handleSearch(e.target.value)}
                 className="pl-8 h-9 w-52 bg-white/5 border-white/10 text-sm"
               />
             </div>
@@ -174,13 +230,21 @@ export function DiscoveryTable({ tokens, isLoading }: DiscoveryTableProps) {
                 <TableHead className="text-xs hidden md:table-cell">
                   Solana
                 </TableHead>
+                <TableHead className="w-8" />
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((token) => (
+              {paged.map((token) => (
                 <TableRow
                   key={token.coingeckoId}
-                  className="border-white/5 hover:bg-white/[0.03] transition-colors"
+                  className="border-white/5 hover:bg-white/[0.03] transition-colors cursor-pointer group"
+                  onClick={() =>
+                    window.open(
+                      `https://www.coingecko.com/en/coins/${token.coingeckoId}`,
+                      "_blank",
+                      "noopener,noreferrer"
+                    )
+                  }
                 >
                   <TableCell className="font-mono text-xs text-muted-foreground">
                     {token.rank}
@@ -241,11 +305,53 @@ export function DiscoveryTable({ tokens, isLoading }: DiscoveryTableProps) {
                       No Solana
                     </Badge>
                   </TableCell>
+                  <TableCell className="w-8 pr-4">
+                    <ExternalLink className="h-3.5 w-3.5 text-muted-foreground/40 group-hover:text-muted-foreground transition-colors" />
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </div>
+
+        {/* Pagination controls */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between pt-4 border-t border-white/5 mt-4">
+            <p className="text-xs text-muted-foreground">
+              Showing {startIdx + 1}–{Math.min(startIdx + effectivePageSize, filtered.length)} of{" "}
+              {filtered.length}
+            </p>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={safePage <= 1}
+                className="flex items-center justify-center h-8 w-8 rounded-md border border-white/10 bg-white/5 text-muted-foreground hover:text-foreground hover:bg-white/10 transition-colors disabled:opacity-30 disabled:pointer-events-none"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setPage(p)}
+                  className={`h-8 min-w-[2rem] px-2 rounded-md text-xs transition-colors ${
+                    p === safePage
+                      ? "bg-white/15 text-foreground font-medium border border-white/20"
+                      : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+                  }`}
+                >
+                  {p}
+                </button>
+              ))}
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={safePage >= totalPages}
+                className="flex items-center justify-center h-8 w-8 rounded-md border border-white/10 bg-white/5 text-muted-foreground hover:text-foreground hover:bg-white/10 transition-colors disabled:opacity-30 disabled:pointer-events-none"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

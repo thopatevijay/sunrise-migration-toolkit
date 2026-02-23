@@ -28,7 +28,7 @@ import { useTokens } from "@/hooks/use-tokens";
 const navItems = [
   { title: "Dashboard", href: "/", icon: BarChart3 },
   { title: "Tokens", href: "/tokens", icon: Coins },
-  { title: "No-Solana", href: "/discovery", icon: Globe },
+  { title: "Discovery", href: "/discovery", icon: Globe },
   { title: "Proposals", href: "/proposals", icon: FileText },
 ];
 

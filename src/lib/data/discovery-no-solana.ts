@@ -111,14 +111,22 @@ export async function fetchNoSolanaTokens(): Promise<DiscoveryToken[]> {
   const cached = cache.get<DiscoveryToken[]>(cacheKey);
   if (cached) return cached;
 
-  // Call 1: Top 250 tokens by market cap
-  const marketsResult = await trackedFetch<CGMarketItem[]>(
-    "coingecko",
-    `${BASE}/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=250&page=1&sparkline=false&price_change_percentage=7d`,
-    { headers: headers() }
-  );
+  // Call 1+2: Top 500 tokens by market cap (2 pages of 250)
+  const [page1, page2] = await Promise.all([
+    trackedFetch<CGMarketItem[]>(
+      "coingecko",
+      `${BASE}/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=250&page=1&sparkline=false&price_change_percentage=7d`,
+      { headers: headers() }
+    ),
+    trackedFetch<CGMarketItem[]>(
+      "coingecko",
+      `${BASE}/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=250&page=2&sparkline=false&price_change_percentage=7d`,
+      { headers: headers() }
+    ),
+  ]);
 
-  if (!marketsResult.data) return [];
+  if (!page1.data) return [];
+  const allMarkets = [...page1.data, ...(page2.data ?? [])];
 
   // Call 2: Full coin list with platform data
   const platformMap = await getPlatformMap();
@@ -128,7 +136,7 @@ export async function fetchNoSolanaTokens(): Promise<DiscoveryToken[]> {
   const results: DiscoveryToken[] = [];
   let rank = 0;
 
-  for (const market of marketsResult.data) {
+  for (const market of allMarkets) {
     // Skip stablecoins
     if (isStablecoin(market.id, market.symbol)) continue;
 
