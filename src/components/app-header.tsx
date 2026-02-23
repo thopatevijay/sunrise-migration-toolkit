@@ -15,7 +15,7 @@ const pageTitles: Record<string, string> = {
 
 interface AppHeaderProps {
   lastUpdated?: string;
-  dataSource?: "live" | "mixed" | "demo";
+  dataSource?: "live" | "partial";
 }
 
 function formatTimeAgo(isoDate: string): string {

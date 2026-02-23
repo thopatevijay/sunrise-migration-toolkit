@@ -46,7 +46,80 @@ interface CoinGeckoMarketChart {
   prices: [number, number][];
 }
 
-// --- Exports ---
+// --- Batch market data (single API call for multiple tokens) ---
+
+interface CoinGeckoMarketItem {
+  id: string;
+  symbol: string;
+  current_price: number;
+  market_cap: number;
+  total_volume: number;
+  price_change_percentage_7d_in_currency: number | null;
+  price_change_percentage_30d_in_currency: number | null;
+  ath: number;
+  ath_date: string;
+  circulating_supply: number;
+  total_supply: number;
+}
+
+export async function fetchBatchMarketData(
+  tokens: { tokenId: string; coingeckoId: string }[]
+): Promise<Map<string, TokenMarketData>> {
+  const results = new Map<string, TokenMarketData>();
+
+  // Check cache first — only fetch uncached tokens
+  const uncached: { tokenId: string; coingeckoId: string }[] = [];
+  for (const t of tokens) {
+    const cached = cache.get<TokenMarketData>(`cg:market:${t.tokenId}`);
+    if (cached) {
+      results.set(t.tokenId, cached);
+    } else {
+      uncached.push(t);
+    }
+  }
+
+  if (uncached.length === 0) return results;
+
+  try {
+    const ids = uncached.map((t) => t.coingeckoId).join(",");
+    const items = await fetchJson<CoinGeckoMarketItem[]>(
+      `${BASE}/coins/markets?vs_currency=usd&ids=${ids}&order=market_cap_desc&per_page=${uncached.length}&page=1&sparkline=false&price_change_percentage=7d,30d`,
+      { headers: headers() }
+    );
+
+    if (!items.data) return results;
+
+    for (const item of items.data) {
+      const token = uncached.find((t) => t.coingeckoId === item.id);
+      if (!token) continue;
+
+      const result: TokenMarketData = {
+        tokenId: token.tokenId,
+        price: item.current_price ?? 0,
+        marketCap: item.market_cap ?? 0,
+        volume24h: item.total_volume ?? 0,
+        tvl: 0, // markets endpoint doesn't include TVL
+        holders: estimateHolders(item.market_cap ?? 0, item.current_price ?? 0),
+        change7d: item.price_change_percentage_7d_in_currency ?? 0,
+        change30d: item.price_change_percentage_30d_in_currency ?? 0,
+        ath: item.ath ?? 0,
+        athDate: item.ath_date?.split("T")[0] ?? "",
+        circulatingSupply: item.circulating_supply ?? 0,
+        totalSupply: item.total_supply ?? 0,
+        priceHistory30d: [], // batch endpoint doesn't include chart
+      };
+
+      cache.set(`cg:market:${token.tokenId}`, result, TTL.MARKET_DATA);
+      results.set(token.tokenId, result);
+    }
+  } catch {
+    console.error("[coingecko] Batch market data fetch failed");
+  }
+
+  return results;
+}
+
+// --- Single token fetches (for detail pages) ---
 
 export async function fetchMarketData(
   tokenId: string,

@@ -1,5 +1,6 @@
 import {
   fetchMarketData,
+  fetchBatchMarketData,
   fetchSocialData,
   fetchBridgeData,
   fetchSearchIntent,
@@ -46,7 +47,7 @@ export interface TokenDetail extends TokenWithScore {
     demandMentions: number;
     influencerMentions: number;
   };
-  dataSource: "live" | "demo";
+  dataSource: "live" | "partial";
 }
 
 export interface AggregateStats {
@@ -56,25 +57,34 @@ export interface AggregateStats {
   totalBridgeVolume7d: number;
   topDemandToken: { symbol: string; score: number };
   risingCount: number;
-  dataSource: "live" | "mixed" | "demo";
+  dataSource: "live" | "partial";
   lastUpdated: string;
 }
 
-// --- Signal fetching with live→demo fallback ---
+// --- Signal fetching — partial data approach ---
 
-async function fetchSignals(token: TokenCandidate): Promise<{
-  bridge: TokenBridgeData;
-  search: TokenSearchData;
-  social: TokenSocialData;
-  market: TokenMarketData;
-  wallet: TokenWalletOverlap;
-  liveCount: number;
-} | null> {
-  let liveCount = 0;
+interface FetchedSignals {
+  bridge: TokenBridgeData | null;
+  search: TokenSearchData | null;
+  social: TokenSocialData | null;
+  market: TokenMarketData | null;
+  wallet: TokenWalletOverlap | null;
+  signalCount: number; // how many signals we got (0-5)
+}
 
-  // Fetch all signals in parallel — live providers first, demo fallback
+async function fetchSignals(
+  token: TokenCandidate,
+  prefetchedMarket?: TokenMarketData | null
+): Promise<FetchedSignals> {
+  let signalCount = 0;
+
+  // Use pre-fetched market data if available (from batch call), otherwise fetch individually
+  const fetchMarketPromise = prefetchedMarket !== undefined
+    ? Promise.resolve(prefetchedMarket)
+    : fetchMarketData(token.id, token.coingeckoId);
+
   const [marketResult, bridgeResult, searchResult, socialResult] = await Promise.allSettled([
-    fetchMarketData(token.id, token.coingeckoId),
+    fetchMarketPromise,
     fetchBridgeData(token.id, token.symbol),
     fetchSearchIntent(token.id, token.symbol, 50),
     fetchSocialData(token.id, token.coingeckoId, token.symbol),
@@ -83,27 +93,26 @@ async function fetchSignals(token: TokenCandidate): Promise<{
   // Market data
   let market = marketResult.status === "fulfilled" ? marketResult.value : null;
   if (market) {
-    // Supplement TVL from DefiLlama if CoinGecko returned 0
     if (market.tvl === 0) {
       const tvl = await fetchProtocolTvl(token.coingeckoId, token.name).catch(() => null);
       if (tvl) market = { ...market, tvl };
     }
-    liveCount++;
+    signalCount++;
   }
 
   // Bridge data
   const bridge = bridgeResult.status === "fulfilled" ? bridgeResult.value : null;
-  if (bridge) liveCount++;
+  if (bridge) signalCount++;
 
   // Search intent
   const search = searchResult.status === "fulfilled" ? searchResult.value : null;
-  if (search) liveCount++;
+  if (search) signalCount++;
 
   // Social data
   const social = socialResult.status === "fulfilled" ? socialResult.value : null;
-  if (social) liveCount++;
+  if (social) signalCount++;
 
-  // Wallet overlap — uses heuristic from other signals
+  // Wallet overlap — heuristic from other signals
   const wallet = estimateWalletOverlap(
     token.id,
     token.originChain,
@@ -111,22 +120,27 @@ async function fetchSignals(token: TokenCandidate): Promise<{
     market,
     bridge
   );
-  if (wallet) liveCount++;
+  if (wallet) signalCount++;
 
-  if (!bridge || !search || !social || !market || !wallet) return null;
-
-  return { bridge, search, social, market, wallet, liveCount };
+  return { bridge, search, social, market, wallet, signalCount };
 }
 
 // --- Public API ---
 
 export async function getTokenCandidates(): Promise<TokenWithScore[]> {
-  const candidates = await discoverMigrationCandidates();
+  const candidates = discoverMigrationCandidates();
 
+  // Batch-fetch all market data in a single CoinGecko call
+  const batchMarket = await fetchBatchMarketData(
+    candidates.map((t) => ({ tokenId: t.id, coingeckoId: t.coingeckoId }))
+  );
+
+  // Now fetch remaining signals per token (bridge, search, social use different APIs)
   const results = await Promise.allSettled(
     candidates.map(async (token) => {
-      const signals = await fetchSignals(token);
-      if (!signals) return null;
+      const signals = await fetchSignals(token, batchMarket.get(token.id) ?? null);
+
+      if (signals.signalCount === 0) return null;
 
       const { bridge, search, social, market, wallet } = signals;
       const mds = calculateMDS(token.id, { bridge, search, social, market, wallet });
@@ -134,12 +148,12 @@ export async function getTokenCandidates(): Promise<TokenWithScore[]> {
       return {
         ...token,
         mds,
-        marketCap: market.marketCap,
-        price: market.price,
-        volume24h: market.volume24h,
-        change7d: market.change7d,
-        bridgeVolume7d: bridge.total7d,
-        searchTrend: search.trend,
+        marketCap: market?.marketCap ?? 0,
+        price: market?.price ?? 0,
+        volume24h: market?.volume24h ?? 0,
+        change7d: market?.change7d ?? 0,
+        bridgeVolume7d: bridge?.total7d ?? 0,
+        searchTrend: search?.trend ?? 0,
       } as TokenWithScore;
     })
   );
@@ -158,48 +172,48 @@ export function getMigratedTokens(): MigratedToken[] {
 }
 
 export async function getTokenDetail(id: string): Promise<TokenDetail | null> {
-  const candidates = await discoverMigrationCandidates();
+  const candidates = discoverMigrationCandidates();
   const token = candidates.find((t) => t.id === id);
   if (!token) return null;
 
   const signals = await fetchSignals(token);
-  if (!signals) return null;
+  if (signals.signalCount === 0) return null;
 
-  const { bridge, search, social, market, wallet, liveCount } = signals;
+  const { bridge, search, social, market, wallet, signalCount } = signals;
   const mds = calculateMDS(id, { bridge, search, social, market, wallet });
-  const dataSource = liveCount >= 3 ? "live" : "demo";
+  const dataSource = signalCount >= 3 ? "live" : "partial";
 
   return {
     ...token,
     mds,
-    marketCap: market.marketCap,
-    price: market.price,
-    volume24h: market.volume24h,
-    change7d: market.change7d,
-    change30d: market.change30d,
-    tvl: market.tvl,
-    holders: market.holders,
-    ath: market.ath,
-    athDate: market.athDate,
-    bridgeVolume7d: bridge.total7d,
-    searchTrend: search.trend,
-    priceHistory30d: market.priceHistory30d,
-    bridgeTimeseries: bridge.timeseries,
-    searchTimeseries: search.timeseries,
+    marketCap: market?.marketCap ?? 0,
+    price: market?.price ?? 0,
+    volume24h: market?.volume24h ?? 0,
+    change7d: market?.change7d ?? 0,
+    change30d: market?.change30d ?? 0,
+    tvl: market?.tvl ?? 0,
+    holders: market?.holders ?? 0,
+    ath: market?.ath ?? 0,
+    athDate: market?.athDate ?? "",
+    bridgeVolume7d: bridge?.total7d ?? 0,
+    searchTrend: search?.trend ?? 0,
+    priceHistory30d: market?.priceHistory30d ?? [],
+    bridgeTimeseries: bridge?.timeseries ?? [],
+    searchTimeseries: search?.timeseries ?? [],
     walletOverlap: {
-      overlapPercentage: wallet.overlapPercentage,
-      solanaWallets: wallet.solanaWallets,
-      totalHolders: wallet.totalHolders,
-      activeOverlap: wallet.activeOverlap,
-      topWalletCategories: wallet.topWalletCategories,
+      overlapPercentage: wallet?.overlapPercentage ?? 0,
+      solanaWallets: wallet?.solanaWallets ?? 0,
+      totalHolders: wallet?.totalHolders ?? 0,
+      activeOverlap: wallet?.activeOverlap ?? 0,
+      topWalletCategories: wallet?.topWalletCategories ?? [],
     },
     socialData: {
-      tweets7d: social.tweets7d,
-      tweets30d: social.tweets30d,
-      sentiment: social.sentiment,
-      topHashtags: social.topHashtags,
-      demandMentions: social.demandMentions,
-      influencerMentions: social.influencerMentions,
+      tweets7d: social?.tweets7d ?? 0,
+      tweets30d: social?.tweets30d ?? 0,
+      sentiment: social?.sentiment ?? 0,
+      topHashtags: social?.topHashtags ?? [],
+      demandMentions: social?.demandMentions ?? 0,
+      influencerMentions: social?.influencerMentions ?? 0,
     },
     dataSource,
   };
@@ -217,7 +231,7 @@ export async function getAggregateStats(): Promise<AggregateStats> {
       totalBridgeVolume7d: 0,
       topDemandToken: { symbol: "N/A", score: 0 },
       risingCount: 0,
-      dataSource: "demo",
+      dataSource: "partial",
       lastUpdated: new Date().toISOString(),
     };
   }
@@ -229,6 +243,9 @@ export async function getAggregateStats(): Promise<AggregateStats> {
   const top = tokens[0];
   const risingCount = tokens.filter((t) => t.mds.trend === "rising").length;
 
+  // Check if all tokens have high confidence (all 5 signals)
+  const allFullConfidence = tokens.every((t) => t.mds.confidence === 1);
+
   return {
     candidateCount: tokens.length,
     migratedCount: migrated.length,
@@ -236,7 +253,7 @@ export async function getAggregateStats(): Promise<AggregateStats> {
     totalBridgeVolume7d: totalBridge,
     topDemandToken: { symbol: top.symbol, score: top.mds.totalScore },
     risingCount,
-    dataSource: "live",
+    dataSource: allFullConfidence ? "live" : "partial",
     lastUpdated: new Date().toISOString(),
   };
 }
