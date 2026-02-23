@@ -4,7 +4,7 @@
 
 Built for the [Sunrise](https://sunrisedefi.com) Migrations track at the [Solana Graveyard Hackathon](https://solana.com/graveyard-hack).
 
-**[Live Demo](https://tideshift.vercel.app)** | Works in demo mode — no API keys required.
+**[Live Demo](https://tideshift.vercel.app)** | Powered by live data from CoinGecko, WormholeScan, DefiLlama, Jupiter, and deBridge.
 
 ---
 
@@ -41,24 +41,32 @@ The Tideshift is two products in one, designed to serve Sunrise's migration pipe
 ┌─────────────────────────────────────────────────────────────────────┐
 │                    SUNRISE MIGRATION LIFECYCLE                      │
 │                                                                     │
-│  ┌──────────────┐    ┌──────────────┐    ┌───────────────────────┐  │
-│  │   DISCOVER   │───>│   MIGRATE    │───>│      ONBOARD          │  │
-│  │              │    │              │    │                       │  │
-│  │  Which token │    │  Sunrise     │    │  Convert origin-chain │  │
-│  │  should come │    │  handles     │    │  community into       │  │
-│  │  next?       │    │  this        │    │  Solana users         │  │
-│  │              │    │              │    │                       │  │
-│  │  Migration   │    │  Asset       │    │  Migration            │  │
-│  │  Tideshift   │    │  arrival,    │    │  Tideshift            │  │
-│  │  (upstream)  │    │  liquidity,  │    │  (downstream)         │  │
-│  │              │    │  distribution│    │                       │  │
-│  └──────────────┘    └──────────────┘    └───────────────────────┘  │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌─────────┐  │
+│  │   DISCOVER   │─>│    SCORE     │─>│   MIGRATE    │─>│ ONBOARD │  │
+│  │              │  │              │  │              │  │         │  │
+│  │  Which tokens│  │  How strong  │  │  Sunrise     │  │ Convert │  │
+│  │  lack Solana │  │  is the      │  │  handles     │  │ users   │  │
+│  │  presence?   │  │  demand?     │  │  this        │  │ into    │  │
+│  │              │  │              │  │              │  │ Solana  │  │
+│  │  Token       │  │  MDS scoring │  │  Asset       │  │ users   │  │
+│  │  Discovery   │  │  Dashboard   │  │  arrival,    │  │         │  │
+│  │  (Tideshift) │  │  (Tideshift) │  │  liquidity   │  │(Tideshift)│
+│  └──────────────┘  └──────────────┘  └──────────────┘  └─────────┘  │
 │                                                                     │
-│        YOU ARE HERE          SUNRISE           YOU ARE HERE          │
+│     YOU ARE HERE    YOU ARE HERE        SUNRISE       YOU ARE HERE   │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
-### Part 1: Demand Discovery Dashboard
+### Part 1: Token Discovery
+
+Scans the top 500 tokens by market cap on CoinGecko and cross-references platform data to identify tokens without a native Solana contract address. Surfaces ~300 migration opportunities with market data, origin chains, and CoinGecko links.
+
+- **Client-side pagination** — view 25, 50, 100, 200, or all tokens at once
+- **Search and sort** — filter by token name, symbol, or chain; sort by market cap, volume, or 7d change
+- **CSV export** — download the full filtered dataset with CoinGecko URLs for Sunrise BD team analysis
+- **Methodology banner** — transparent explanation of filtering criteria
+
+### Part 2: Demand Discovery Dashboard
 
 A data-driven dashboard that surfaces which tokens Solana users want migrated — ranked, scored, and ready for Sunrise to act on.
 
@@ -90,7 +98,7 @@ The dashboard shows:
 
 **Who uses this:** Sunrise team, to prioritize which tokens to bring next. Token teams, to see if demand exists before applying.
 
-### Part 2: Community Onboarding Flow
+### Part 3: Community Onboarding Flow
 
 A white-label, per-token onboarding experience that Sunrise deploys for each migration. When a token arrives on Solana, its community gets a guided path to become Solana users.
 
@@ -164,8 +172,9 @@ A white-label, per-token onboarding experience that Sunrise deploys for each mig
 
 | Without Tideshift | With Tideshift |
 |----------------|-------------|
-| Manual demand discovery | Data-driven candidate scoring |
-| Anecdotal signals | Quantified demand with MDS |
+| Manual demand discovery | Token Discovery: ~300 non-Solana tokens surfaced automatically |
+| Anecdotal signals | Quantified demand with MDS scoring across 5 signal categories |
+| No visibility into migration landscape | Full list of top-500 tokens without Solana CA, exportable as CSV |
 | Community left to figure it out | Guided onboarding, per token |
 | No post-migration metrics | Conversion analytics at every step |
 | Each migration starts from scratch | Repeatable, scalable process |
@@ -180,20 +189,21 @@ Tideshift turns Sunrise's migration pipeline from a series of one-off efforts in
 ┌─────────────────────────────────────────────────────────────────┐
 │                        FRONTEND (Next.js)                       │
 │                                                                 │
-│  ┌─────────────────────┐    ┌────────────────────────────────┐  │
-│  │  Demand Discovery   │    │   Community Onboarding Flow    │  │
-│  │  Dashboard          │    │   (white-label, per token)     │  │
-│  │                     │    │                                │  │
-│  │  - Token rankings   │    │  - Wallet setup wizard         │  │
-│  │  - MDS scores       │    │  - Bridge flow (Sunrise)       │  │
-│  │  - Trend charts     │    │  - Trading venue discovery     │  │
-│  │  - Proposal builder │    │  - DeFi opportunities          │  │
-│  └────────┬────────────┘    └──────────────┬─────────────────┘  │
-│           │                                │                    │
-└───────────┼────────────────────────────────┼────────────────────┘
-            │                                │
-┌───────────┼────────────────────────────────┼────────────────────┐
-│           ▼          DATA LAYER            ▼                    │
+│  ┌──────────────────┐ ┌──────────────┐ ┌─────────────────────┐  │
+│  │ Demand Discovery │ │   Token      │ │ Community Onboarding│  │
+│  │ Dashboard        │ │   Discovery  │ │ Flow (white-label)  │  │
+│  │                  │ │              │ │                     │  │
+│  │ - MDS scores     │ │ - Top 500   │ │ - Wallet setup      │  │
+│  │ - Trend charts   │ │   scanning  │ │ - Bridge flow       │  │
+│  │ - Proposal       │ │ - Non-Solana│ │ - Trading venues    │  │
+│  │   builder        │ │   filtering │ │ - DeFi opportunities│  │
+│  └───────┬──────────┘ └──────┬───────┘ └──────────┬──────────┘  │
+│           │                │                │                    │
+└───────────┼────────────────┼────────────────┼────────────────────┘
+            │                │                │
+┌───────────┼────────────────┼────────────────┼────────────────────┐
+│           ▼                ▼                ▼                    │
+│                        DATA LAYER                                │
 │                                                                 │
 │  ┌─────────────────────────────────────────────────────────┐    │
 │  │              Scoring Engine (MDS)                       │    │
@@ -218,12 +228,11 @@ Tideshift turns Sunrise's migration pipeline from a series of one-off efforts in
 
 | Layer | Technology |
 |-------|-----------|
-| Frontend | Next.js 14, Tailwind CSS, Recharts |
-| Data Fetching | SWR, server actions |
-| Wallet Integration | @solana/wallet-adapter |
-| Price/Market Data | Jupiter API, Birdeye API, CoinGecko |
-| On-chain Data | Helius RPC, Wormhole Explorer API |
-| Social Signals | X/Twitter API |
+| Frontend | Next.js 14, Tailwind CSS, Recharts, shadcn/ui, Framer Motion |
+| Data Fetching | SWR (auto-refresh), server-side TTL cache |
+| APIs (Tier 1, no auth) | WormholeScan, DefiLlama, Jupiter Lite, deBridge |
+| APIs (Tier 2, optional key) | CoinGecko (market data + token discovery) |
+| Monitoring | API Health Board (real-time provider status in sidebar) |
 | Deployment | Vercel |
 
 ---
@@ -270,7 +279,7 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) to see the application.
 
-> **Note:** The app works fully in demo mode with zero API keys configured. All data is realistic but hardcoded. Add API keys in `.env` to enable live data from Wormhole, Jupiter, CoinGecko, etc.
+> **Note:** The app uses live API data from CoinGecko, WormholeScan, DefiLlama, Jupiter, and deBridge. No API keys are required for basic functionality — free tiers are sufficient. Add a `COINGECKO_API_KEY` in `.env` for higher rate limits.
 
 ---
 
@@ -278,13 +287,14 @@ Open [http://localhost:3000](http://localhost:3000) to see the application.
 
 **[Live Demo: tideshift.vercel.app](https://tideshift.vercel.app)**
 
-The app runs in demo mode with realistic sample data for 12 candidate tokens and 4 migrated tokens. No API keys needed.
+The app runs on live API data. The Discovery page surfaces ~300 tokens without Solana presence from the top 500 by market cap. The Dashboard scores 12 candidate tokens using real signals from 5 API providers. API health status is visible in the sidebar.
 
 ### Key Pages
 
 | Page | URL | Description |
 |------|-----|-------------|
 | Dashboard | [/](https://tideshift.vercel.app/) | Token rankings, MDS scores, bridge outflow charts, search trends |
+| Discovery | [/discovery](https://tideshift.vercel.app/discovery) | ~300 tokens without Solana CA, pagination, search, CSV export |
 | Token Detail | [/tokens/ondo](https://tideshift.vercel.app/tokens/ondo) | Radar chart, signal analysis, price chart, migration readiness |
 | Proposals | [/proposals](https://tideshift.vercel.app/proposals) | Saved migration proposals with copy/share |
 | Onboarding (HYPE) | [/onboard/hype](https://tideshift.vercel.app/onboard/hype) | 5-step guided migration: wallet → bridge → trade → DeFi |
