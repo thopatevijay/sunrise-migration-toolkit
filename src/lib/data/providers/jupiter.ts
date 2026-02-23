@@ -7,13 +7,14 @@ const LITE_BASE = "https://lite-api.jup.ag";
 // --- Raw types ---
 
 interface JupiterToken {
-  address: string;
+  id: string;
   symbol: string;
   name: string;
   decimals: number;
-  logoURI?: string;
+  icon?: string;
   tags?: string[];
-  verified?: boolean;
+  isVerified?: boolean;
+  liquidity?: number;
 }
 
 interface JupiterPriceData {
@@ -39,14 +40,15 @@ export async function fetchSearchIntent(
 
   try {
     const result = await fetchJson<JupiterToken[]>(
-      `${LITE_BASE}/token/v2/search?query=${encodeURIComponent(symbol)}`
+      `${LITE_BASE}/tokens/v2/search?query=${encodeURIComponent(symbol)}`
     );
 
     if (!result.data) return null;
 
     const sym = symbol.toUpperCase();
+    // Check for verified token with exact symbol match (filters out pump.fun clones)
     const existsOnJupiter = result.data.some(
-      (t) => t.symbol?.toUpperCase() === sym
+      (t) => t.symbol?.toUpperCase() === sym && t.isVerified === true
     );
 
     // If token already exists on Jupiter/Solana, demand is lower (already met)

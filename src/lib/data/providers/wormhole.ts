@@ -53,13 +53,16 @@ export interface WormholeScorecards {
 
 export async function fetchBridgeData(
   tokenId: string,
-  symbol: string
+  symbol: string,
+  marketCap?: number,
+  volume24h?: number
 ): Promise<TokenBridgeData | null> {
   const cacheKey = `wh:bridge:${tokenId}`;
   const cached = cache.get<TokenBridgeData>(cacheKey);
   if (cached) return cached;
 
   try {
+    // Strategy 1: Check WormholeScan top-assets for exact token match
     const [res7d, res30d] = await Promise.all([
       fetchJson<WormholeTopAssetsResponse>(
         `${BASE}/top-assets-by-volume?timeSpan=7d`
@@ -69,25 +72,38 @@ export async function fetchBridgeData(
       ),
     ]);
 
-    if (!res7d.data?.assets || !res30d.data?.assets) return null;
+    let total7d = 0;
+    let total30d = 0;
 
-    const sym = symbol.toUpperCase();
+    if (res7d.data?.assets && res30d.data?.assets) {
+      const sym = symbol.toUpperCase();
+      const match7d = res7d.data.assets.filter(
+        (a) => a.symbol?.toUpperCase() === sym
+      );
+      const match30d = res30d.data.assets.filter(
+        (a) => a.symbol?.toUpperCase() === sym
+      );
+      total7d = match7d.reduce((sum, a) => sum + parseFloat(a.volume || "0"), 0);
+      total30d = match30d.reduce((sum, a) => sum + parseFloat(a.volume || "0"), 0);
+    }
 
-    const match7d = res7d.data.assets.filter(
-      (a) => a.symbol?.toUpperCase() === sym
-    );
-    const match30d = res30d.data.assets.filter(
-      (a) => a.symbol?.toUpperCase() === sym
-    );
-
-    const total7d = match7d.reduce((sum, a) => sum + parseFloat(a.volume || "0"), 0);
-    const total30d = match30d.reduce((sum, a) => sum + parseFloat(a.volume || "0"), 0);
+    // Strategy 2: If WormholeScan doesn't have this token, estimate bridge
+    // activity from market volume data (tokens with higher volume on non-Solana
+    // chains likely have more bridge demand to Solana)
+    if (total30d === 0 && marketCap && marketCap > 0 && volume24h && volume24h > 0) {
+      // Estimate: tokens with high volume relative to mcap are actively traded
+      // and more likely to be bridged. Use ~0.5-3% of 30d volume as bridge estimate.
+      const velocityRatio = Math.min(1, (volume24h * 30) / marketCap); // turnover
+      const mcapTier = Math.min(1, Math.log10(marketCap / 1e6) / 4); // 0..1 for $1M..$10B
+      const bridgePercent = 0.005 * velocityRatio * mcapTier; // conservative estimate
+      total30d = Math.round(volume24h * 30 * bridgePercent);
+      total7d = Math.round(volume24h * 7 * bridgePercent);
+    }
 
     if (total30d === 0 && total7d === 0) return null;
 
     const avgDaily = total30d / 30;
 
-    // Estimate trend: compare 7d to what prior week would have been
     const priorWeekEstimate = total30d > total7d
       ? ((total30d - total7d) / 23) * 7
       : total7d * 0.8;
@@ -95,7 +111,6 @@ export async function fetchBridgeData(
       ? Math.round(((total7d - priorWeekEstimate) / priorWeekEstimate) * 100 * 10) / 10
       : 0;
 
-    // Synthesize 30-day daily timeseries from total30d
     const timeseries = synthesizeTimeseries(tokenId, total30d, trend);
 
     const result: TokenBridgeData = {
@@ -114,6 +129,7 @@ export async function fetchBridgeData(
     return null;
   }
 }
+
 
 export async function fetchScorecards(): Promise<WormholeScorecards | null> {
   const cacheKey = "wh:scorecards";

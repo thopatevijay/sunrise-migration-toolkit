@@ -83,9 +83,9 @@ async function fetchSignals(
     ? Promise.resolve(prefetchedMarket)
     : fetchMarketData(token.id, token.coingeckoId);
 
-  const [marketResult, bridgeResult, searchResult, socialResult] = await Promise.allSettled([
+  // Fetch market, search, and social in parallel (bridge needs market cap for DefiLlama fallback)
+  const [marketResult, searchResult, socialResult] = await Promise.allSettled([
     fetchMarketPromise,
-    fetchBridgeData(token.id, token.symbol),
     fetchSearchIntent(token.id, token.symbol, 50),
     fetchSocialData(token.id, token.coingeckoId, token.symbol),
   ]);
@@ -100,8 +100,10 @@ async function fetchSignals(
     signalCount++;
   }
 
-  // Bridge data
-  const bridge = bridgeResult.status === "fulfilled" ? bridgeResult.value : null;
+  // Bridge data — pass market cap + volume for estimation fallback when WormholeScan lacks data
+  const bridge = await fetchBridgeData(
+    token.id, token.symbol, market?.marketCap, market?.volume24h
+  ).catch(() => null);
   if (bridge) signalCount++;
 
   // Search intent

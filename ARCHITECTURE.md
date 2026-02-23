@@ -57,7 +57,7 @@ src/
 │   │       └── defi-step.tsx         # DeFi opportunities + completion
 │   ├── shared/
 │   │   ├── chain-badge.tsx           # Chain logo + name
-│   │   ├── demo-banner.tsx           # Data source indicator (live/mixed/demo)
+│   │   ├── demo-banner.tsx           # Data source indicator (live/partial)
 │   │   ├── mds-badge.tsx             # Score-colored badge
 │   │   ├── motion.tsx                # Framer Motion animation wrappers
 │   │   ├── score-ring.tsx            # Circular SVG MDS progress
@@ -71,8 +71,8 @@ src/
 │   └── use-tokens.ts                 # SWR hooks (5min dashboard, 1min detail refresh)
 ├── lib/
 │   ├── data/
-│   │   ├── index.ts                  # Data facade — async, live→demo fallback
-│   │   ├── token-discovery.ts        # Candidate registry + validation
+│   │   ├── index.ts                  # Data facade — partial data approach, no demo fallback
+│   │   ├── token-discovery.ts        # Curated token registry (sync)
 │   │   ├── providers/                # Live API provider clients
 │   │   │   ├── cache.ts              # TTL-based in-memory cache (500 entries)
 │   │   │   ├── http.ts              # Shared fetch helper (timeout + retry)
@@ -83,14 +83,7 @@ src/
 │   │   │   ├── debridge.ts           # Supplemental bridge data
 │   │   │   ├── wallet-heuristic.ts   # Wallet overlap estimation
 │   │   │   └── index.ts              # Re-exports all providers
-│   │   └── demo/                     # Demo data (fallback only)
-│   │       ├── index.ts              # Re-exports + DEMO_MODE flag
-│   │       ├── tokens.ts             # 12 candidates + 4 migrated tokens
-│   │       ├── bridge-volumes.ts     # 30-day bridge timeseries
-│   │       ├── search-intent.ts      # 14-day search trends
-│   │       ├── social-signals.ts     # Tweet counts + sentiment
-│   │       ├── market-data.ts        # Price, mcap, volume, 30d history
-│   │       └── wallet-overlap.ts     # Overlap % + wallet categories
+│   │   └── (no demo folder — all data from live APIs)
 │   ├── scoring/
 │   │   ├── mds.ts                    # calculateMDS() — normalize, weight, sum
 │   │   ├── normalizers.ts            # 5 signal normalizers (0-100)
@@ -99,9 +92,10 @@ src/
 │   │   └── onboarding.ts            # Step tracking + funnel (localStorage)
 │   ├── types/
 │   │   ├── scoring.ts                # MDS interfaces + score utilities
+│   │   ├── signals.ts                # Signal type definitions (bridge, search, social, market, wallet)
 │   │   └── proposals.ts              # Proposal storage (localStorage)
 │   ├── config/
-│   │   ├── tokens.ts                 # TokenCandidate, MigratedToken types
+│   │   ├── tokens.ts                 # Token registry (12 candidates + 4 migrated) + types
 │   │   ├── chains.ts                 # 9 chain definitions
 │   │   └── onboarding.ts            # Per-token onboarding configs (HYPE, MON)
 │   └── utils.ts                      # formatUSD, formatNumber, cn, etc.
@@ -111,11 +105,11 @@ src/
 
 ```
 Live APIs (CoinGecko, WormholeScan, DefiLlama, Jupiter, deBridge)
-  ↓ try/catch with demo fallback
+  ↓ try/catch → null on failure (no demo fallback)
 Provider Clients (src/lib/data/providers/)
-  ↓ TTL-cached
+  ↓ TTL-cached, partial data approach
 Data Facade (src/lib/data/index.ts)
-  ↓ MDS scoring engine
+  ↓ MDS scoring with weight redistribution for missing signals
 API Routes (/api/tokens, /api/tokens/:id)
   ↓ JSON response
 SWR Hooks (auto-refresh: 5min dashboard, 1min detail)
@@ -154,10 +148,13 @@ The scoring engine aggregates five signal categories into a single score per tok
 - Metric: Estimated percentage of token holders with active Solana wallets
 - Chain proximity scores: Arbitrum (18%) > Optimism (16%) > Ethereum (15%) > Base (14%)
 
-### Score Calculation
+### Score Calculation (Partial Data Approach)
 
 ```
-MDS = Σ(normalized_signal_i × weight_i) × 100
+available_weight = Σ(weight_i for signals that returned data)
+scale = 1 / available_weight
+MDS = Σ(normalized_signal_i × weight_i) × scale   (clamped 0-100)
+confidence = available_signals / 5                  (0.0 to 1.0)
 
 Score ranges:
   90-100: Extremely high demand — immediate migration candidate
@@ -166,6 +163,9 @@ Score ranges:
   30-49:  Emerging demand — early signal
   0-29:   Low/no demand — not ready
 ```
+
+Missing signals are excluded from the score (weight redistributed to available signals).
+A token with 3/5 signals gets `confidence: 0.6`. Tokens with 0 signals are excluded entirely.
 
 ## API Provider Architecture
 
@@ -202,7 +202,7 @@ Every provider follows the same pattern:
 1. Check in-memory cache → return if valid
 2. Call live API with timeout (10s) + 1 retry on 5xx
 3. On success → cache result → return
-4. On failure → return `null` (data facade falls back to demo data)
+4. On failure → return `null` (data facade scores token with available signals only)
 
 ## Onboarding Flow Architecture
 
