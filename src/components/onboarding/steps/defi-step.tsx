@@ -1,13 +1,21 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ExternalLink, PartyPopper, Share2 } from "lucide-react";
+import { ExternalLink, PartyPopper, Share2, Loader2 } from "lucide-react";
 import type { OnboardingConfig } from "@/lib/config/onboarding";
 
 interface DeFiStepProps {
   config: OnboardingConfig;
+}
+
+interface ProtocolYield {
+  protocol: string;
+  bestApy: number;
+  poolSymbol: string;
+  tvlUsd: number;
 }
 
 const RISK_COLORS: Record<string, string> = {
@@ -24,6 +32,17 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 export function DeFiStep({ config }: DeFiStepProps) {
+  const [liveYields, setLiveYields] = useState<Record<string, ProtocolYield>>({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/yields")
+      .then((res) => res.json())
+      .then((data) => setLiveYields(data))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
   const shareText = `I just onboarded ${config.symbol} to Solana via @SunriseDefi! 🌅\n\nWallet ✅ Bridge ✅ Trade ✅ DeFi ✅\n\nTry it: tideshift.app/onboard/${config.slug}`;
 
   return (
@@ -39,49 +58,79 @@ export function DeFiStep({ config }: DeFiStepProps) {
       </div>
 
       <div className="space-y-3">
-        {config.defiOpportunities.map((opp) => (
-          <Card key={opp.protocol} className="glass-card hover:bg-white/[0.04] transition-colors">
-            <CardContent className="flex items-center gap-4 py-4">
-              <div className="flex-1 space-y-1.5">
-                <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-semibold">{opp.protocol}</h3>
-                  <Badge
-                    variant="outline"
-                    className="text-[10px] border-white/10"
-                  >
-                    {TYPE_LABELS[opp.type]}
-                  </Badge>
-                  <Badge
-                    variant="outline"
-                    className={`text-[10px] ${RISK_COLORS[opp.risk]}`}
-                  >
-                    {opp.risk} risk
-                  </Badge>
+        {config.defiOpportunities.map((opp) => {
+          const live = liveYields[opp.protocol];
+          const apyDisplay = live
+            ? `${live.bestApy.toFixed(1)}%`
+            : opp.apy !== "—"
+            ? opp.apy
+            : null;
+          const isLive = !!live;
+
+          return (
+            <Card key={opp.protocol} className="glass-card hover:bg-white/[0.04] transition-colors">
+              <CardContent className="flex items-center gap-4 py-4">
+                <div className="flex-1 space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-semibold">{opp.protocol}</h3>
+                    <Badge
+                      variant="outline"
+                      className="text-[10px] border-white/10"
+                    >
+                      {TYPE_LABELS[opp.type]}
+                    </Badge>
+                    <Badge
+                      variant="outline"
+                      className={`text-[10px] ${RISK_COLORS[opp.risk]}`}
+                    >
+                      {opp.risk} risk
+                    </Badge>
+                    {isLive && (
+                      <Badge
+                        variant="outline"
+                        className="text-[10px] border-emerald-500/30 text-emerald-400"
+                      >
+                        Live
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {isLive
+                      ? `${live.poolSymbol} pool — $${(live.tvlUsd / 1e6).toFixed(1)}M TVL`
+                      : opp.description}
+                  </p>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  {opp.description}
-                </p>
-              </div>
-              <div className="text-right shrink-0">
-                <p className="text-lg font-mono font-bold text-emerald-400">
-                  {opp.apy}
-                </p>
-                <p className="text-[10px] text-muted-foreground">APY</p>
-              </div>
-              <a
-                href={opp.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="shrink-0"
-              >
-                <Button variant="outline" size="sm" className="gap-1.5">
-                  Open
-                  <ExternalLink className="h-3 w-3" />
-                </Button>
-              </a>
-            </CardContent>
-          </Card>
-        ))}
+                <div className="text-right shrink-0">
+                  {loading ? (
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  ) : apyDisplay ? (
+                    <>
+                      <p className="text-lg font-mono font-bold text-emerald-400">
+                        {apyDisplay}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {isLive ? "Live APY" : "APY"}
+                      </p>
+                    </>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">—</p>
+                  )}
+                </div>
+                <a
+                  href={opp.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="shrink-0"
+                >
+                  <Button variant="outline" size="sm" className="gap-1.5">
+                    Open
+                    <ExternalLink className="h-3 w-3" />
+                  </Button>
+                </a>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       {/* Completion card */}

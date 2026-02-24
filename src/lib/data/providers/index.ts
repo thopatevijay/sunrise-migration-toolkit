@@ -10,3 +10,5 @@ export { fetchSearchIntent, fetchJupiterPrice } from "./jupiter";
 export { fetchDebridgeChains, fetchRecentOrders } from "./debridge";
 export type { DebridgeOrder } from "./debridge";
 export { estimateWalletOverlap } from "./wallet-heuristic";
+export { fetchSolanaYields } from "./defillama-yields";
+export type { ProtocolYield } from "./defillama-yields";
