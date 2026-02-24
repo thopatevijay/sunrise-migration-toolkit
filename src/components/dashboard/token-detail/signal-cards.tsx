@@ -143,8 +143,12 @@ export function SignalCards({ token }: SignalCardsProps) {
             <p className="font-mono">{formatUSD(token.tvl)}</p>
           </div>
           <div>
-            <span className="text-muted-foreground">Holders</span>
-            <p className="font-mono">{formatNumber(token.holders)}</p>
+            <span className="text-muted-foreground">
+              Holders{!token.holdersExact && " (est.)"}
+            </span>
+            <p className="font-mono">
+              {!token.holdersExact && "~"}{formatNumber(token.holders)}
+            </p>
           </div>
           <div>
             <span className="text-muted-foreground">ATH</span>

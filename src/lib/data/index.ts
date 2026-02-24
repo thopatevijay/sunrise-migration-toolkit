@@ -8,6 +8,8 @@ import {
   fetchProtocolTvl,
   fetchProtocolSolanaTvlRatio,
   estimateWalletOverlap,
+  fetchTokenHolderCount,
+  fetchCoinGeckoPlatforms,
 } from "./providers";
 import { discoverMigrationCandidates, getAlreadyMigratedTokens } from "./token-discovery";
 import { calculateMDS } from "@/lib/scoring/mds";
@@ -28,6 +30,7 @@ export interface TokenWithScore extends TokenCandidate {
 export interface TokenDetail extends TokenWithScore {
   tvl: number;
   holders: number;
+  holdersExact: boolean;
   change30d: number;
   ath: number;
   athDate: string;
@@ -246,7 +249,23 @@ export async function getTokenDetail(id: string): Promise<TokenDetail | null> {
   const signals = await fetchSignals(token);
   if (signals.signalCount === 0) return null;
 
-  const { bridge, search, social, market, wallet, signalCount } = signals;
+  const { bridge, search, social, wallet, signalCount } = signals;
+  let { market } = signals;
+
+  // Try to get real holder count from Helius for tokens with a Solana mint
+  let holdersExact = market?.holdersExact ?? false;
+  if (market) {
+    const platforms = await fetchCoinGeckoPlatforms(token.coingeckoId).catch(() => null);
+    const solanaMint = platforms?.["solana"];
+    if (solanaMint) {
+      const heliusResult = await fetchTokenHolderCount(solanaMint).catch(() => null);
+      if (heliusResult) {
+        market = { ...market, holders: heliusResult.count, holdersExact: heliusResult.isExact };
+        holdersExact = heliusResult.isExact;
+      }
+    }
+  }
+
   const mds = calculateMDS(id, { bridge, search, social, market, wallet });
   const dataSource = signalCount >= 3 ? "live" : "partial";
 
@@ -260,6 +279,7 @@ export async function getTokenDetail(id: string): Promise<TokenDetail | null> {
     change30d: market?.change30d ?? 0,
     tvl: market?.tvl ?? 0,
     holders: market?.holders ?? 0,
+    holdersExact,
     ath: market?.ath ?? 0,
     athDate: market?.athDate ?? "",
     bridgeVolume7d: bridge?.total7d ?? 0,

@@ -101,6 +101,7 @@ export async function fetchBatchMarketData(
         volume24h: item.total_volume ?? 0,
         tvl: 0, // markets endpoint doesn't include TVL
         holders: estimateHolders(item.market_cap ?? 0, item.current_price ?? 0),
+        holdersExact: false,
         change7d: item.price_change_percentage_7d_in_currency ?? 0,
         change30d: item.price_change_percentage_30d_in_currency ?? 0,
         ath: item.ath ?? 0,
@@ -163,6 +164,7 @@ export async function fetchMarketData(
       volume24h: md.total_volume?.usd ?? 0,
       tvl: md.total_value_locked?.usd ?? 0,
       holders,
+      holdersExact: false,
       change7d: md.price_change_percentage_7d ?? 0,
       change30d: md.price_change_percentage_30d ?? 0,
       ath: md.ath?.usd ?? 0,

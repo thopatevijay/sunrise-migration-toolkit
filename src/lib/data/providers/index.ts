@@ -11,5 +11,7 @@ export { fetchDexScreenerActivity } from "./dexscreener";
 export { fetchDebridgeChains, fetchRecentOrders } from "./debridge";
 export type { DebridgeOrder } from "./debridge";
 export { estimateWalletOverlap } from "./wallet-heuristic";
+export { fetchTokenHolderCount } from "./helius";
+export type { HolderCountResult } from "./helius";
 export { fetchSolanaYields } from "./defillama-yields";
 export type { ProtocolYield } from "./defillama-yields";

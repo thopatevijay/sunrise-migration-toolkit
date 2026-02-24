@@ -48,6 +48,7 @@ export interface TokenMarketData {
   volume24h: number;
   tvl: number;
   holders: number;
+  holdersExact: boolean; // true = real on-chain count (Helius), false = estimated
   change7d: number;
   change30d: number;
   ath: number;
