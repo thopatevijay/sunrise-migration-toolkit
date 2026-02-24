@@ -24,13 +24,20 @@ export function normalizeBridgeOutflow(data: TokenBridgeData): number {
 
 /**
  * Search Intent Score (0-100)
- * Based on average daily searches + trend
+ * Based on real DexScreener trading activity + Jupiter listing status
  */
 export function normalizeSearchIntent(data: TokenSearchData): number {
-  // 5000+ daily searches = max score
-  const searchScore = normalize(data.avgDaily, 0, 5000);
-  const trendBonus = Math.max(0, data.trend) * 0.2;
-  return Math.min(100, Math.round(searchScore + trendBonus));
+  // $1M+ daily volume = max (35%)
+  const volumeScore = normalize(data.totalVolume24h, 0, 1_000_000) * 0.35;
+  // 10K+ daily txns = max (25%)
+  const txnScore = normalize(data.avgDaily, 0, 10_000) * 0.25;
+  // $5M+ liquidity = max (15%)
+  const liquidityScore = normalize(data.totalLiquidity, 0, 5_000_000) * 0.15;
+  // Unmet demand bonus: not on Jupiter = +15 points
+  const unmetBonus = data.existsOnJupiter ? 0 : 15;
+  // DexScreener trending boost bonus
+  const trendBonus = data.boostScore > 0 ? Math.min(10, data.boostScore / 50) : 0;
+  return Math.min(100, Math.round(volumeScore + txnScore + liquidityScore + unmetBonus + trendBonus));
 }
 
 /**

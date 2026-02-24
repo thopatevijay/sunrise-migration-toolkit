@@ -16,18 +16,18 @@ export interface TokenBridgeData {
   dataSource: "live" | "estimated";
 }
 
-export interface SearchIntentPoint {
-  date: string;
-  searches: number;
-}
-
 export interface TokenSearchData {
   tokenId: string;
   total14d: number;
   avgDaily: number;
   peakDay: number;
   trend: number;
-  timeseries: SearchIntentPoint[];
+  existsOnJupiter: boolean;
+  pairCount: number;
+  solanaPairCount: number;
+  totalVolume24h: number;
+  totalLiquidity: number;
+  boostScore: number;
 }
 
 export interface TokenSocialData {

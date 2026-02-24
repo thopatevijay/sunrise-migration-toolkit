@@ -3,7 +3,8 @@ import {
   fetchMarketData,
   fetchSocialData,
   fetchBridgeData,
-  fetchSearchIntent,
+  checkJupiterListing,
+  fetchDexScreenerActivity,
   fetchProtocolTvl,
   fetchProtocolSolanaTvlRatio,
   estimateWalletOverlap,
@@ -60,9 +61,10 @@ export async function POST(request: Request) {
     const category: TokenCategory = "defi";
 
     // Fetch signals in parallel where possible
+    const existsOnJupiter = await checkJupiterListing(symbol).catch(() => false);
     const [marketResult, searchResult, socialResult] = await Promise.allSettled([
       fetchMarketData(tokenId, coingeckoId),
-      fetchSearchIntent(tokenId, symbol, 50),
+      fetchDexScreenerActivity(tokenId, symbol, existsOnJupiter),
       fetchSocialData(tokenId, coingeckoId),
     ]);
 

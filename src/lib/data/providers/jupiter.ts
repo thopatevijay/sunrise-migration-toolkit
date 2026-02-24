@@ -1,6 +1,5 @@
 import { cache, TTL } from "./cache";
 import { trackedFetch } from "./health";
-import type { TokenSearchData, SearchIntentPoint } from "@/lib/types/signals";
 
 const LITE_BASE = "https://lite-api.jup.ag";
 
@@ -29,14 +28,15 @@ interface JupiterPriceResponse {
 
 // --- Exports ---
 
-export async function fetchSearchIntent(
-  tokenId: string,
-  symbol: string,
-  marketCapRank: number
-): Promise<TokenSearchData | null> {
-  const cacheKey = `jup:search:${tokenId}`;
-  const cached = cache.get<TokenSearchData>(cacheKey);
-  if (cached) return cached;
+/**
+ * Check if a token with the given symbol is verified on Jupiter (exists on Solana).
+ */
+export async function checkJupiterListing(
+  symbol: string
+): Promise<boolean> {
+  const cacheKey = `jup:exists:${symbol}`;
+  const cached = cache.get<boolean>(cacheKey);
+  if (cached !== null) return cached;
 
   try {
     const result = await trackedFetch<JupiterToken[]>(
@@ -44,53 +44,17 @@ export async function fetchSearchIntent(
       `${LITE_BASE}/tokens/v2/search?query=${encodeURIComponent(symbol)}`
     );
 
-    if (!result.data) return null;
+    if (!result.data) return false;
 
     const sym = symbol.toUpperCase();
-    // Check for verified token with exact symbol match (filters out pump.fun clones)
-    const existsOnJupiter = result.data.some(
+    const exists = result.data.some(
       (t) => t.symbol?.toUpperCase() === sym && t.isVerified === true
     );
 
-    // If token already exists on Jupiter/Solana, demand is lower (already met)
-    // If NOT on Jupiter, demand is unmet → higher search score
-    let baseSearches: number;
-    let trendFactor: number;
-
-    if (existsOnJupiter) {
-      baseSearches = Math.round(500 * (1 / Math.log10(marketCapRank + 10)));
-      trendFactor = -0.05; // demand already met, declining search
-    } else {
-      baseSearches = Math.round(2000 * (1 / Math.log10(marketCapRank + 10)));
-      trendFactor = 0.15 + (1 / (marketCapRank + 1)) * 0.3; // higher rank = more searches
-    }
-
-    // Generate 14-day timeseries
-    const timeseries = generateSearchTimeseries(tokenId, baseSearches, trendFactor);
-    const total14d = timeseries.reduce((s, p) => s + p.searches, 0);
-    const peakDay = Math.max(...timeseries.map((p) => p.searches));
-    const last7 = timeseries.slice(-7);
-    const prior7 = timeseries.slice(0, 7);
-    const last7Avg = last7.reduce((s, p) => s + p.searches, 0) / 7;
-    const prior7Avg = prior7.reduce((s, p) => s + p.searches, 0) / 7;
-    const trend = prior7Avg > 0
-      ? Math.round(((last7Avg - prior7Avg) / prior7Avg) * 100 * 10) / 10
-      : 0;
-
-    const data: TokenSearchData = {
-      tokenId,
-      total14d,
-      avgDaily: Math.round(total14d / 14),
-      peakDay,
-      trend,
-      timeseries,
-    };
-
-    cache.set(cacheKey, data, TTL.SEARCH_DATA);
-    return data;
+    cache.set(cacheKey, exists, TTL.SEARCH_DATA);
+    return exists;
   } catch {
-    console.error(`[jupiter] Failed to fetch search intent for ${tokenId}`);
-    return null;
+    return false;
   }
 }
 
@@ -119,52 +83,4 @@ export async function fetchJupiterPrice(
     console.error(`[jupiter] Failed to fetch price for ${mintAddress}`);
     return null;
   }
-}
-
-// --- Helpers ---
-
-function generateSearchTimeseries(
-  tokenId: string,
-  baseSearches: number,
-  trendFactor: number
-): SearchIntentPoint[] {
-  const points: SearchIntentPoint[] = [];
-  const now = new Date();
-  const seed = hashCode(tokenId);
-
-  for (let i = 13; i >= 0; i--) {
-    const date = new Date(now);
-    date.setDate(date.getDate() - i);
-
-    const dayProgress = (14 - i) / 14;
-    const trendMultiplier = 1 + trendFactor * dayProgress;
-    const noise = 1 + pseudoRandom(seed + i) * 0.4 - 0.2;
-    // Occasional spike
-    const spike = pseudoRandom(seed + i + 50) > 0.85 ? 2.0 : 1.0;
-
-    const searches = Math.round(
-      Math.max(0, baseSearches * trendMultiplier * noise * spike)
-    );
-
-    points.push({
-      date: date.toISOString().split("T")[0],
-      searches,
-    });
-  }
-
-  return points;
-}
-
-function hashCode(str: string): number {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = (hash << 5) - hash + str.charCodeAt(i);
-    hash |= 0;
-  }
-  return Math.abs(hash);
-}
-
-function pseudoRandom(seed: number): number {
-  const x = Math.sin(seed * 9301 + 49297) * 233280;
-  return x - Math.floor(x);
 }

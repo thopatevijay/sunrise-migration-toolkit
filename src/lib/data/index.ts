@@ -3,7 +3,8 @@ import {
   fetchBatchMarketData,
   fetchSocialData,
   fetchBridgeData,
-  fetchSearchIntent,
+  checkJupiterListing,
+  fetchDexScreenerActivity,
   fetchProtocolTvl,
   fetchProtocolSolanaTvlRatio,
   estimateWalletOverlap,
@@ -32,7 +33,14 @@ export interface TokenDetail extends TokenWithScore {
   athDate: string;
   priceHistory30d: { date: string; price: number }[];
   bridgeTimeseries: { date: string; volume: number; txCount: number }[];
-  searchTimeseries: { date: string; searches: number }[];
+  searchActivity: {
+    totalVolume24h: number;
+    totalLiquidity: number;
+    pairCount: number;
+    solanaPairCount: number;
+    existsOnJupiter: boolean;
+    boostScore: number;
+  };
   walletOverlap: {
     overlapPercentage: number;
     solanaWallets: number;
@@ -86,10 +94,13 @@ async function fetchSignals(
     ? Promise.resolve(prefetchedMarket)
     : fetchMarketData(token.id, token.coingeckoId);
 
-  // Fetch market, search, and social in parallel (bridge needs market cap for DefiLlama fallback)
+  // Check Jupiter listing first (used by DexScreener for unmet demand signal)
+  const existsOnJupiter = await checkJupiterListing(token.symbol).catch(() => false);
+
+  // Fetch market, search (DexScreener), and social in parallel
   const [marketResult, searchResult, socialResult] = await Promise.allSettled([
     fetchMarketPromise,
-    fetchSearchIntent(token.id, token.symbol, 50),
+    fetchDexScreenerActivity(token.id, token.symbol, existsOnJupiter),
     fetchSocialData(token.id, token.coingeckoId),
   ]);
 
@@ -255,7 +266,14 @@ export async function getTokenDetail(id: string): Promise<TokenDetail | null> {
     searchTrend: search?.trend ?? 0,
     priceHistory30d: market?.priceHistory30d ?? [],
     bridgeTimeseries: bridge?.timeseries ?? [],
-    searchTimeseries: search?.timeseries ?? [],
+    searchActivity: {
+      totalVolume24h: search?.totalVolume24h ?? 0,
+      totalLiquidity: search?.totalLiquidity ?? 0,
+      pairCount: search?.pairCount ?? 0,
+      solanaPairCount: search?.solanaPairCount ?? 0,
+      existsOnJupiter: search?.existsOnJupiter ?? false,
+      boostScore: search?.boostScore ?? 0,
+    },
     walletOverlap: {
       overlapPercentage: wallet?.overlapPercentage ?? 0,
       solanaWallets: wallet?.solanaWallets ?? 0,

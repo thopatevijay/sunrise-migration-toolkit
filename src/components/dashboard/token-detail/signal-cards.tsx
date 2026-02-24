@@ -3,8 +3,6 @@
 import {
   AreaChart,
   Area,
-  LineChart,
-  Line,
   ResponsiveContainer,
   XAxis,
   Tooltip,
@@ -71,33 +69,32 @@ export function SignalCards({ token }: SignalCardsProps) {
       title: "Search Intent",
       icon: Search,
       color: "#22d3ee",
-      value: `${formatNumber(token.mds.breakdown.searchIntent.raw)}/day`,
-      label: "avg. Jupiter searches",
+      value: formatUSD(token.searchActivity.totalVolume24h),
+      label: "24h DEX volume",
       score: token.mds.breakdown.searchIntent.normalized,
       trend: token.searchTrend,
-      chart: (
-        <ResponsiveContainer width="100%" height={80}>
-          <LineChart data={token.searchTimeseries}>
-            <XAxis dataKey="date" hide />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: "hsl(222 40% 10%)",
-                border: "1px solid rgba(255,255,255,0.1)",
-                borderRadius: "6px",
-                fontSize: 11,
-              }}
-              formatter={(v: number) => [v, "Searches"]}
-              labelFormatter={() => ""}
-            />
-            <Line
-              type="monotone"
-              dataKey="searches"
-              stroke="#22d3ee"
-              strokeWidth={2}
-              dot={false}
-            />
-          </LineChart>
-        </ResponsiveContainer>
+      badge: token.searchActivity.existsOnJupiter ? "On Jupiter" : "Not on Solana",
+      extra: (
+        <div className="grid grid-cols-2 gap-2 mt-2 text-xs">
+          <div>
+            <span className="text-muted-foreground">DEX Pairs</span>
+            <p className="font-mono">{token.searchActivity.pairCount}</p>
+          </div>
+          <div>
+            <span className="text-muted-foreground">Solana Pairs</span>
+            <p className="font-mono">{token.searchActivity.solanaPairCount}</p>
+          </div>
+          <div>
+            <span className="text-muted-foreground">Liquidity</span>
+            <p className="font-mono">{formatUSD(token.searchActivity.totalLiquidity)}</p>
+          </div>
+          <div>
+            <span className="text-muted-foreground">Trending</span>
+            <p className="font-mono">
+              {token.searchActivity.boostScore > 0 ? `Score: ${token.searchActivity.boostScore}` : "No"}
+            </p>
+          </div>
+        </div>
       ),
     },
     {

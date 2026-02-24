@@ -8,7 +8,9 @@ export type ProviderName =
   | "wormholescan"
   | "defillama"
   | "jupiter"
-  | "debridge";
+  | "debridge"
+  | "dexscreener"
+  | "helius";
 
 export type ProviderStatus = "healthy" | "degraded" | "down" | "unknown";
 
@@ -31,6 +33,8 @@ const DISPLAY_NAMES: Record<ProviderName, string> = {
   defillama: "DefiLlama",
   jupiter: "Jupiter",
   debridge: "deBridge",
+  dexscreener: "DexScreener",
+  helius: "Helius",
 };
 
 // --- Singleton store ---
