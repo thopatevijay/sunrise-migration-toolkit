@@ -33,9 +33,10 @@ export function SignalCards({ token }: SignalCardsProps) {
       icon: Waves,
       color: "#a78bfa",
       value: formatUSD(token.bridgeVolume7d),
-      label: "7-day volume",
+      label: `7-day volume${token.bridgeDataSource === "estimated" ? " (estimated)" : ""}`,
       score: token.mds.breakdown.bridgeOutflow.normalized,
-      chart: (
+      badge: token.bridgeDataSource === "estimated" ? "Estimated" : "Live",
+      chart: token.bridgeTimeseries.length > 0 ? (
         <ResponsiveContainer width="100%" height={80}>
           <AreaChart data={token.bridgeTimeseries.slice(-14)}>
             <defs>
@@ -64,7 +65,7 @@ export function SignalCards({ token }: SignalCardsProps) {
             />
           </AreaChart>
         </ResponsiveContainer>
-      ),
+      ) : undefined,
     },
     {
       title: "Search Intent",
@@ -159,6 +160,7 @@ export function SignalCards({ token }: SignalCardsProps) {
       value: `${token.walletOverlap.overlapPercentage}%`,
       label: `${formatNumber(token.walletOverlap.solanaWallets)} Solana wallets`,
       score: token.mds.breakdown.walletOverlap.normalized,
+      badge: token.walletOverlap.isEstimated ? "Estimated" : undefined,
       extra: (
         <div className="space-y-1.5 mt-2">
           <div className="flex justify-between text-xs">
@@ -198,12 +200,26 @@ export function SignalCards({ token }: SignalCardsProps) {
                 <card.icon className="h-4 w-4" style={{ color: card.color }} />
                 <CardTitle className="text-sm">{card.title}</CardTitle>
               </div>
-              <Badge
-                variant="outline"
-                className="font-mono text-[10px] border-white/10"
-              >
-                {card.score}/100
-              </Badge>
+              <div className="flex items-center gap-1.5">
+                {card.badge && (
+                  <Badge
+                    variant="outline"
+                    className={`text-[10px] ${
+                      card.badge === "Live"
+                        ? "border-emerald-500/30 text-emerald-400"
+                        : "border-yellow-500/30 text-yellow-400"
+                    }`}
+                  >
+                    {card.badge}
+                  </Badge>
+                )}
+                <Badge
+                  variant="outline"
+                  className="font-mono text-[10px] border-white/10"
+                >
+                  {card.score}/100
+                </Badge>
+              </div>
             </div>
           </CardHeader>
           <CardContent>

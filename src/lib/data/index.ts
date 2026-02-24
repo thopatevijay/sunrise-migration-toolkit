@@ -38,7 +38,9 @@ export interface TokenDetail extends TokenWithScore {
     totalHolders: number;
     activeOverlap: number;
     topWalletCategories: { category: string; percentage: number }[];
+    isEstimated?: boolean;
   };
+  bridgeDataSource: "live" | "estimated";
   socialData: {
     tweets7d: number;
     tweets30d: number;
@@ -253,7 +255,9 @@ export async function getTokenDetail(id: string): Promise<TokenDetail | null> {
       totalHolders: wallet?.totalHolders ?? 0,
       activeOverlap: wallet?.activeOverlap ?? 0,
       topWalletCategories: wallet?.topWalletCategories ?? [],
+      isEstimated: wallet?.isEstimated ?? true,
     },
+    bridgeDataSource: bridge?.dataSource ?? "estimated",
     socialData: {
       tweets7d: social?.tweets7d ?? 0,
       tweets30d: social?.tweets30d ?? 0,

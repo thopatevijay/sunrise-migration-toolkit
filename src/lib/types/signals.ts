@@ -13,6 +13,7 @@ export interface TokenBridgeData {
   avgDaily: number;
   trend: number; // percentage change 7d vs prior 7d
   timeseries: BridgeVolumePoint[];
+  dataSource: "live" | "estimated";
 }
 
 export interface SearchIntentPoint {
@@ -66,4 +67,5 @@ export interface TokenWalletOverlap {
     category: string;
     percentage: number;
   }[];
+  isEstimated?: boolean;
 }

@@ -1,6 +1,6 @@
 import { cache, TTL } from "./cache";
 import { trackedFetch } from "./health";
-import type { TokenBridgeData, BridgeVolumePoint } from "@/lib/types/signals";
+import type { TokenBridgeData } from "@/lib/types/signals";
 
 const BASE = "https://api.wormholescan.io/api/v1";
 
@@ -92,14 +92,15 @@ export async function fetchBridgeData(
     // Strategy 2: If WormholeScan doesn't have this token, estimate bridge
     // activity from market volume data (tokens with higher volume on non-Solana
     // chains likely have more bridge demand to Solana)
+    let dataSource: "live" | "estimated" = total30d > 0 ? "live" : "estimated";
+
     if (total30d === 0 && marketCap && marketCap > 0 && volume24h && volume24h > 0) {
-      // Estimate: tokens with high volume relative to mcap are actively traded
-      // and more likely to be bridged. Use ~0.5-3% of 30d volume as bridge estimate.
-      const velocityRatio = Math.min(1, (volume24h * 30) / marketCap); // turnover
-      const mcapTier = Math.min(1, Math.log10(marketCap / 1e6) / 4); // 0..1 for $1M..$10B
-      const bridgePercent = 0.005 * velocityRatio * mcapTier; // conservative estimate
+      const velocityRatio = Math.min(1, (volume24h * 30) / marketCap);
+      const mcapTier = Math.min(1, Math.log10(marketCap / 1e6) / 4);
+      const bridgePercent = 0.005 * velocityRatio * mcapTier;
       total30d = Math.round(volume24h * 30 * bridgePercent);
       total7d = Math.round(volume24h * 7 * bridgePercent);
+      dataSource = "estimated";
     }
 
     if (total30d === 0 && total7d === 0) return null;
@@ -113,15 +114,14 @@ export async function fetchBridgeData(
       ? Math.round(((total7d - priorWeekEstimate) / priorWeekEstimate) * 100 * 10) / 10
       : 0;
 
-    const timeseries = synthesizeTimeseries(tokenId, total30d, trend);
-
     const result: TokenBridgeData = {
       tokenId,
       total30d: Math.round(total30d),
       total7d: Math.round(total7d),
       avgDaily: Math.round(avgDaily),
       trend,
-      timeseries,
+      timeseries: [],
+      dataSource,
     };
 
     cache.set(cacheKey, result, TTL.BRIDGE_DATA);
@@ -158,54 +158,6 @@ export async function fetchScorecards(): Promise<WormholeScorecards | null> {
     console.error("[wormhole] Failed to fetch scorecards");
     return null;
   }
-}
-
-// --- Helpers ---
-
-function synthesizeTimeseries(
-  tokenId: string,
-  total30d: number,
-  trend: number
-): BridgeVolumePoint[] {
-  const points: BridgeVolumePoint[] = [];
-  const now = new Date();
-  const seed = hashCode(tokenId);
-
-  for (let i = 29; i >= 0; i--) {
-    const date = new Date(now);
-    date.setDate(date.getDate() - i);
-
-    const dayProgress = (30 - i) / 30;
-    const trendMultiplier = 1 + (trend / 100) * dayProgress;
-    const noise = 1 + pseudoRandom(seed + i) * 0.4 - 0.2;
-    const weekendDip = date.getDay() === 0 || date.getDay() === 6 ? 0.7 : 1;
-
-    const dailyBase = total30d / 30;
-    const volume = Math.round(Math.max(0, dailyBase * trendMultiplier * noise * weekendDip));
-    const txCount = Math.max(1, Math.round(volume / (8000 + pseudoRandom(seed + i + 100) * 4000)));
-
-    points.push({
-      date: date.toISOString().split("T")[0],
-      volume,
-      txCount,
-    });
-  }
-
-  return points;
-}
-
-function hashCode(str: string): number {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = (hash << 5) - hash + str.charCodeAt(i);
-    hash |= 0;
-  }
-  return Math.abs(hash);
-}
-
-function pseudoRandom(seed: number): number {
-  const x = Math.sin(seed * 9301 + 49297) * 233280;
-  return x - Math.floor(x);
 }
 
 export { WORMHOLE_CHAIN_IDS };
