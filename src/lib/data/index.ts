@@ -129,43 +129,68 @@ async function fetchSignals(
 
 // --- Public API ---
 
+// Process tokens in batches to respect API rate limits (especially CoinGecko 30/min)
+const BATCH_SIZE = 5;
+const BATCH_DELAY_MS = 2000;
+
+async function processBatch(
+  tokens: TokenCandidate[],
+  batchMarket: Map<string, TokenMarketData>
+): Promise<(TokenWithScore | null)[]> {
+  return Promise.all(
+    tokens.map(async (token) => {
+      try {
+        const signals = await fetchSignals(token, batchMarket.get(token.id) ?? null);
+        if (signals.signalCount === 0) return null;
+
+        const { bridge, search, social, market, wallet } = signals;
+        const mds = calculateMDS(token.id, { bridge, search, social, market, wallet });
+
+        return {
+          ...token,
+          mds,
+          marketCap: market?.marketCap ?? 0,
+          price: market?.price ?? 0,
+          volume24h: market?.volume24h ?? 0,
+          change7d: market?.change7d ?? 0,
+          bridgeVolume7d: bridge?.total7d ?? 0,
+          searchTrend: search?.trend ?? 0,
+        } as TokenWithScore;
+      } catch {
+        console.error(`[data] Failed to score ${token.id}`);
+        return null;
+      }
+    })
+  );
+}
+
+function delay(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export async function getTokenCandidates(): Promise<TokenWithScore[]> {
-  const candidates = discoverMigrationCandidates();
+  const candidates = await discoverMigrationCandidates();
 
   // Batch-fetch all market data in a single CoinGecko call
   const batchMarket = await fetchBatchMarketData(
     candidates.map((t) => ({ tokenId: t.id, coingeckoId: t.coingeckoId }))
   );
 
-  // Now fetch remaining signals per token (bridge, search, social use different APIs)
-  const results = await Promise.allSettled(
-    candidates.map(async (token) => {
-      const signals = await fetchSignals(token, batchMarket.get(token.id) ?? null);
+  // Process signals in batches to respect rate limits
+  const allResults: (TokenWithScore | null)[] = [];
+  for (let i = 0; i < candidates.length; i += BATCH_SIZE) {
+    const batch = candidates.slice(i, i + BATCH_SIZE);
+    const batchResults = await processBatch(batch, batchMarket);
+    allResults.push(...batchResults);
 
-      if (signals.signalCount === 0) return null;
+    // Delay between batches (skip after last batch)
+    if (i + BATCH_SIZE < candidates.length) {
+      await delay(BATCH_DELAY_MS);
+    }
+  }
 
-      const { bridge, search, social, market, wallet } = signals;
-      const mds = calculateMDS(token.id, { bridge, search, social, market, wallet });
-
-      return {
-        ...token,
-        mds,
-        marketCap: market?.marketCap ?? 0,
-        price: market?.price ?? 0,
-        volume24h: market?.volume24h ?? 0,
-        change7d: market?.change7d ?? 0,
-        bridgeVolume7d: bridge?.total7d ?? 0,
-        searchTrend: search?.trend ?? 0,
-      } as TokenWithScore;
-    })
-  );
-
-  return results
-    .filter(
-      (r): r is PromiseFulfilledResult<TokenWithScore> =>
-        r.status === "fulfilled" && r.value !== null
-    )
-    .map((r) => r.value)
+  return allResults
+    .filter((r): r is TokenWithScore => r !== null)
     .sort((a, b) => b.mds.totalScore - a.mds.totalScore);
 }
 
@@ -174,9 +199,29 @@ export function getMigratedTokens(): MigratedToken[] {
 }
 
 export async function getTokenDetail(id: string): Promise<TokenDetail | null> {
-  const candidates = discoverMigrationCandidates();
-  const token = candidates.find((t) => t.id === id);
-  if (!token) return null;
+  const candidates = await discoverMigrationCandidates();
+  let token = candidates.find((t) => t.id === id);
+
+  // Fallback: build TokenCandidate on-the-fly from Discovery data
+  if (!token) {
+    const { fetchNoSolanaTokens } = await import("./discovery-no-solana");
+    const { DISCOVERY_CHAIN_MAP } = await import("@/lib/config/tokens");
+    const discoveryTokens = await fetchNoSolanaTokens();
+    const dt = discoveryTokens.find((t) => t.coingeckoId === id);
+    if (!dt) return null;
+
+    token = {
+      id: dt.coingeckoId,
+      symbol: dt.symbol,
+      name: dt.name,
+      logo: dt.logo,
+      originChain: DISCOVERY_CHAIN_MAP[dt.originChains[0]] ?? "other",
+      category: "defi" as const,
+      coingeckoId: dt.coingeckoId,
+      description: `${dt.name} — rank #${dt.rank} by market cap, on ${dt.originChains.join(", ")}`,
+      status: "candidate" as const,
+    };
+  }
 
   const signals = await fetchSignals(token);
   if (signals.signalCount === 0) return null;
