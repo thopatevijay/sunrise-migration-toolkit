@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  Activity,
   BarChart3,
   Coins,
   FileText,
@@ -30,6 +31,7 @@ const navItems = [
   { title: "Tokens", href: "/tokens", icon: Coins },
   { title: "Discovery", href: "/discovery", icon: Globe },
   { title: "Proposals", href: "/proposals", icon: FileText },
+  { title: "Migrations", href: "/migrations", icon: Activity },
 ];
 
 const onboardingItems = [

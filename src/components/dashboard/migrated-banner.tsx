@@ -3,8 +3,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CheckCircle2, ExternalLink } from "lucide-react";
+import { ArrowRight, CheckCircle2, ExternalLink } from "lucide-react";
 import { ChainBadge } from "@/components/shared/chain-badge";
+import Link from "next/link";
 import type { MigratedToken } from "@/lib/config/tokens";
 
 interface MigratedBannerProps {
@@ -42,6 +43,12 @@ export function MigratedBanner({ tokens, isLoading }: MigratedBannerProps) {
           >
             {tokens.length} tokens
           </Badge>
+          <Link
+            href="/migrations"
+            className="ml-auto flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            View Health <ArrowRight className="h-3 w-3" />
+          </Link>
         </div>
       </CardHeader>
       <CardContent>
