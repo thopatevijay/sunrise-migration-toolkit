@@ -267,33 +267,33 @@ export function ProposalsSection() {
             </span>
           </div>
           <div className="space-y-1 text-xs text-muted-foreground">
-            <p>
+            <div className="flex items-center gap-1">
               <Badge
                 variant="outline"
-                className="text-red-400 bg-red-500/10 border-0 text-[10px] mr-1"
+                className="text-red-400 bg-red-500/10 border-0 text-[10px]"
               >
                 High
               </Badge>
-              Any high-severity factor is present
-            </p>
-            <p>
+              <span>Any high-severity factor is present</span>
+            </div>
+            <div className="flex items-center gap-1">
               <Badge
                 variant="outline"
-                className="text-yellow-400 bg-yellow-500/10 border-0 text-[10px] mr-1"
+                className="text-yellow-400 bg-yellow-500/10 border-0 text-[10px]"
               >
                 Medium
               </Badge>
-              Two or more medium-severity factors are present
-            </p>
-            <p>
+              <span>Two or more medium-severity factors are present</span>
+            </div>
+            <div className="flex items-center gap-1">
               <Badge
                 variant="outline"
-                className="text-emerald-400 bg-emerald-500/10 border-0 text-[10px] mr-1"
+                className="text-emerald-400 bg-emerald-500/10 border-0 text-[10px]"
               >
                 Low
               </Badge>
-              Default — no high factors, fewer than two medium factors
-            </p>
+              <span>Default — no high factors, fewer than two medium factors</span>
+            </div>
           </div>
         </div>
       </div>
