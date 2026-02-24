@@ -56,7 +56,9 @@ export function calculateMDS(
   let availableCount = 0;
   let activeWeightSum = 0;
 
-  const bridgeNorm = bridge ? normalizeBridgeOutflow(bridge) : 0;
+  // Discount estimated bridge data (fabricated from market volume) by 50%
+  const bridgeRaw = bridge ? normalizeBridgeOutflow(bridge) : 0;
+  const bridgeNorm = bridge?.dataSource === "estimated" ? Math.round(bridgeRaw * 0.5) : bridgeRaw;
   const searchNorm = search ? normalizeSearchIntent(search) : 0;
   const socialNorm = social ? normalizeSocialDemand(social) : 0;
   const healthNorm = market ? normalizeChainHealth(market) : 0;

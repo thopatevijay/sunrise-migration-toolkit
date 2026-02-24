@@ -64,11 +64,11 @@ export function TokenHeader({ token, onGenerateProposal }: TokenHeaderProps) {
           <div className="flex gap-6 items-center">
             <div className="text-right">
               <p className="text-2xl font-bold font-mono">
-                {formatUSD(token.price)}
+                {token.hasMarketData ? formatUSD(token.price) : "—"}
               </p>
-              <TrendIndicator value={token.change7d} size="md" />
+              {token.hasMarketData && <TrendIndicator value={token.change7d} size="md" />}
               <p className="text-xs text-muted-foreground mt-0.5">
-                MCap {formatUSD(token.marketCap)}
+                MCap {token.hasMarketData ? formatUSD(token.marketCap) : "—"}
               </p>
             </div>
 

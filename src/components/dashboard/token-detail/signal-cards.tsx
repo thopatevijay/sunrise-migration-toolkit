@@ -101,10 +101,10 @@ export function SignalCards({ token }: SignalCardsProps) {
       title: "Social Demand",
       icon: MessageCircle,
       color: "#34d399",
-      value: `${token.socialData.communityScore}/100`,
-      label: "community score",
+      value: token.hasSocialData ? `${token.socialData.communityScore}/100` : "—",
+      label: token.hasSocialData ? "community score" : "no data available",
       score: token.mds.breakdown.socialDemand.normalized,
-      extra: (
+      extra: token.hasSocialData ? (
         <div className="space-y-2 mt-2">
           <div className="flex justify-between text-xs">
             <span className="text-muted-foreground">Sentiment</span>
@@ -123,16 +123,20 @@ export function SignalCards({ token }: SignalCardsProps) {
             </div>
           </div>
         </div>
+      ) : (
+        <p className="text-xs text-muted-foreground mt-2">
+          Social data temporarily unavailable (API rate limit).
+        </p>
       ),
     },
     {
       title: "Chain Health",
       icon: Activity,
       color: "#f59e0b",
-      value: formatUSD(token.marketCap),
-      label: "market cap",
+      value: token.hasMarketData ? formatUSD(token.marketCap) : "—",
+      label: token.hasMarketData ? "market cap" : "no data available",
       score: token.mds.breakdown.chainHealth.normalized,
-      extra: (
+      extra: token.hasMarketData ? (
         <div className="grid grid-cols-2 gap-2 mt-2 text-xs">
           <div>
             <span className="text-muted-foreground">Volume 24h</span>
@@ -155,6 +159,10 @@ export function SignalCards({ token }: SignalCardsProps) {
             <p className="font-mono">{formatUSD(token.ath)}</p>
           </div>
         </div>
+      ) : (
+        <p className="text-xs text-muted-foreground mt-2">
+          Market data temporarily unavailable (API rate limit).
+        </p>
       ),
     },
     {

@@ -18,9 +18,7 @@ export interface TokenBridgeData {
 
 export interface TokenSearchData {
   tokenId: string;
-  total14d: number;
   avgDaily: number;
-  peakDay: number;
   trend: number;
   existsOnJupiter: boolean;
   pairCount: number;

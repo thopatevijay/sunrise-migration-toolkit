@@ -25,6 +25,7 @@ export interface TokenWithScore extends TokenCandidate {
   change7d: number;
   bridgeVolume7d: number;
   searchTrend: number;
+  hasMarketData: boolean;
 }
 
 export interface TokenDetail extends TokenWithScore {
@@ -52,6 +53,7 @@ export interface TokenDetail extends TokenWithScore {
     topWalletCategories: { category: string; percentage: number }[];
     isEstimated?: boolean;
   };
+  hasSocialData: boolean;
   bridgeDataSource: "live" | "estimated";
   socialData: {
     twitterFollowers: number;
@@ -178,6 +180,7 @@ async function processBatch(
           change7d: market?.change7d ?? 0,
           bridgeVolume7d: bridge?.total7d ?? 0,
           searchTrend: search?.trend ?? 0,
+          hasMarketData: market !== null,
         } as TokenWithScore;
       } catch {
         console.error(`[data] Failed to score ${token.id}`);
@@ -284,6 +287,7 @@ export async function getTokenDetail(id: string): Promise<TokenDetail | null> {
     athDate: market?.athDate ?? "",
     bridgeVolume7d: bridge?.total7d ?? 0,
     searchTrend: search?.trend ?? 0,
+    hasMarketData: market !== null,
     priceHistory30d: market?.priceHistory30d ?? [],
     bridgeTimeseries: bridge?.timeseries ?? [],
     searchActivity: {
@@ -302,6 +306,7 @@ export async function getTokenDetail(id: string): Promise<TokenDetail | null> {
       topWalletCategories: wallet?.topWalletCategories ?? [],
       isEstimated: wallet?.isEstimated ?? true,
     },
+    hasSocialData: social !== null && (social.communityScore > 0 || social.twitterFollowers > 0),
     bridgeDataSource: bridge?.dataSource ?? "estimated",
     socialData: {
       twitterFollowers: social?.twitterFollowers ?? 0,

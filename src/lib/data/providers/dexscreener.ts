@@ -85,17 +85,13 @@ export async function fetchDexScreenerActivity(
     const unmetMultiplier = existsOnJupiter ? 0.5 : 1.5;
 
     const avgDaily = Math.round(totalTxns24h * unmetMultiplier + (boostScore > 0 ? 500 : 0));
-    const peakDay = Math.round(avgDaily * 1.5);
-    const total14d = avgDaily * 14;
 
     // Trend based on boost presence and volume
     const trend = boostScore > 0 ? 15 : (totalVolume24h > 100_000 ? 5 : -5);
 
     const data: TokenSearchData = {
       tokenId,
-      total14d,
       avgDaily,
-      peakDay,
       trend,
       existsOnJupiter,
       pairCount,

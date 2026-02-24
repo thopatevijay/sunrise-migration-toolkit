@@ -224,7 +224,7 @@ export function TokenTable({ tokens, isLoading }: TokenTableProps) {
                     {formatUSD(token.bridgeVolume7d)}
                   </TableCell>
                   <TableCell className="font-mono text-sm hidden md:table-cell">
-                    {formatUSD(token.marketCap)}
+                    {token.hasMarketData ? formatUSD(token.marketCap) : "—"}
                   </TableCell>
                   <TableCell className="hidden lg:table-cell">
                     <Sparkline
