@@ -35,26 +35,25 @@ This onboarding journey is undocumented and different for every token. Most comm
 
 ## Solution
 
-The Tideshift is two products in one, designed to serve Sunrise's migration pipeline from end to end:
+Tideshift covers the **full migration lifecycle** — from demand discovery to post-migration monitoring — designed to serve Sunrise's pipeline end to end:
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│                    SUNRISE MIGRATION LIFECYCLE                      │
-│                                                                     │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌─────────┐  │
-│  │   DISCOVER   │─>│    SCORE     │─>│   MIGRATE    │─>│ ONBOARD │  │
-│  │              │  │              │  │              │  │         │  │
-│  │  Which tokens│  │  How strong  │  │  Sunrise     │  │ Convert │  │
-│  │  lack Solana │  │  is the      │  │  handles     │  │ users   │  │
-│  │  presence?   │  │  demand?     │  │  this        │  │ into    │  │
-│  │              │  │              │  │              │  │ Solana  │  │
-│  │  Token       │  │  MDS scoring │  │  Asset       │  │ users   │  │
-│  │  Discovery   │  │  Dashboard   │  │  arrival,    │  │         │  │
-│  │  (Tideshift) │  │  (Tideshift) │  │  liquidity   │  │(Tideshift)│
-│  └──────────────┘  └──────────────┘  └──────────────┘  └─────────┘  │
-│                                                                     │
-│     YOU ARE HERE    YOU ARE HERE        SUNRISE       YOU ARE HERE   │
-└─────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                       SUNRISE MIGRATION LIFECYCLE                            │
+│                                                                              │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐       │
+│  │ DISCOVER │─>│  SCORE   │─>│ MIGRATE  │─>│ MONITOR  │─>│ ONBOARD  │       │
+│  │          │  │          │  │          │  │          │  │          │       │
+│  │ ~300     │  │ Top 50   │  │ Sunrise  │  │ Health   │  │ 4 token  │       │
+│  │ non-     │  │ dynamic  │  │ handles  │  │ tracking │  │ flows    │       │
+│  │ Solana   │  │ MDS      │  │ asset    │  │ for      │  │ wallet → │       │
+│  │ tokens   │  │ scoring  │  │ arrival  │  │ migrated │  │ bridge → │       │
+│  │          │  │ + voting │  │          │  │ tokens   │  │ trade →  │       │
+│  │          │  │ + on-    │  │          │  │          │  │ DeFi     │       │
+│  │          │  │ demand   │  │          │  │          │  │          │       │
+│  └──────────┘  └──────────┘  └──────────┘  └──────────┘  └──────────┘       │
+│   Tideshift    Tideshift      SUNRISE      Tideshift     Tideshift          │
+└──────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Part 1: Token Discovery
@@ -68,37 +67,39 @@ Scans the top 500 tokens by market cap on CoinGecko and cross-references platfor
 
 ### Part 2: Demand Discovery Dashboard
 
-A data-driven dashboard that surfaces which tokens Solana users want migrated — ranked, scored, and ready for Sunrise to act on.
+Dynamically scores the **top 50 non-Solana tokens** (by market cap) using 5 real-time signal categories. No hardcoded token lists — the dashboard pulls from the Discovery API and scores automatically.
 
 **Data signals we aggregate:**
 
-| Signal | Source | What it tells us |
-|--------|--------|-----------------|
-| Bridge outflows | Wormhole, deBridge, Mayan | Solana users leaving to buy tokens elsewhere |
-| Search intent | Jupiter, Birdeye | Tokens users search for but can't find on Solana |
-| Social demand | X/Twitter, Discord | Community sentiment and migration requests |
-| Origin-chain metrics | CoinGecko, DefiLlama | Token health: volume, TVL, holder count, market cap |
-| Ecosystem overlap | On-chain analysis | How many Solana wallets also hold the origin token |
+| Signal | Weight | Source | What it tells us |
+|--------|--------|--------|-----------------|
+| Bridge outflows | 30% | WormholeScan, deBridge | Solana users leaving to buy tokens elsewhere |
+| Search intent | 25% | Jupiter | Tokens users search for but can't find on Solana |
+| Social demand | 20% | CoinGecko community data | Community sentiment and migration requests |
+| Origin-chain health | 15% | CoinGecko, DefiLlama | Token health: volume, TVL, holder count, market cap |
+| Wallet overlap | 10% | Heuristic model | How many Solana wallets also hold the origin token |
 
-**Each token gets a Migration Demand Score (MDS):**
-
-```
-MDS = w1(bridge_outflow_volume)
-    + w2(search_intent_frequency)
-    + w3(social_demand_signals)
-    + w4(origin_chain_health)
-    + w5(ecosystem_wallet_overlap)
-```
-
-The dashboard shows:
-- **Top migration candidates** ranked by MDS
+**Key features:**
+- **50 dynamically scored tokens** — refreshes from live data, cached 3 minutes
 - **Demand trends** — is interest growing or fading?
-- **Migration readiness** — does the token have NTT/OFT support? Active team?
-- **One-click proposal** — generates a structured migration proposal for Sunrise
+- **Community demand voting** — users upvote tokens they want on Solana
+- **On-demand MDS scoring** — score any Discovery token in real time from the table
+- **Auto-generated proposals** — bridge recommendation, liquidity estimates, risk assessment, competitive landscape
 
 **Who uses this:** Sunrise team, to prioritize which tokens to bring next. Token teams, to see if demand exists before applying.
 
-### Part 3: Community Onboarding Flow
+### Part 3: Migration Health Monitor
+
+Tracks post-migration health of tokens already on Solana. Completes the lifecycle: Discovery → Score → Migrate → **Monitor**.
+
+- **Health score** (0-100): composite of volume trend, market cap stability, bridge activity, price momentum
+- **30-day price sparklines** for each migrated token
+- **Bridge activity tracking** from WormholeScan
+- **Status badges**: healthy / moderate / concerning
+
+Currently monitoring: HYPE, MON, LIT, INX
+
+### Part 4: Community Onboarding Flow
 
 A white-label, per-token onboarding experience that Sunrise deploys for each migration. When a token arrives on Solana, its community gets a guided path to become Solana users.
 
@@ -146,6 +147,8 @@ A white-label, per-token onboarding experience that Sunrise deploys for each mig
 
 **Who uses this:** Token communities migrating to Solana. Sunrise team, to measure migration success.
 
+Currently live for: HYPE (Hyperliquid), MON (Monad), LIT (Lighter), INX (Infinex)
+
 ---
 
 ## User Stories
@@ -175,7 +178,10 @@ A white-label, per-token onboarding experience that Sunrise deploys for each mig
 | Manual demand discovery | Token Discovery: ~300 non-Solana tokens surfaced automatically |
 | Anecdotal signals | Quantified demand with MDS scoring across 5 signal categories |
 | No visibility into migration landscape | Full list of top-500 tokens without Solana CA, exportable as CSV |
-| Community left to figure it out | Guided onboarding, per token |
+| No community input | Community demand voting — users upvote tokens they want |
+| Manual proposal writing | Auto-generated proposals with bridge, liquidity, and risk analysis |
+| No post-migration tracking | Migration Health Monitor with health scores and trend data |
+| Community left to figure it out | Guided onboarding for 4 tokens (HYPE, MON, LIT, INX) |
 | No post-migration metrics | Conversion analytics at every step |
 | Each migration starts from scratch | Repeatable, scalable process |
 
@@ -186,42 +192,40 @@ Tideshift turns Sunrise's migration pipeline from a series of one-off efforts in
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        FRONTEND (Next.js)                       │
-│                                                                 │
-│  ┌──────────────────┐ ┌──────────────┐ ┌─────────────────────┐  │
-│  │ Demand Discovery │ │   Token      │ │ Community Onboarding│  │
-│  │ Dashboard        │ │   Discovery  │ │ Flow (white-label)  │  │
-│  │                  │ │              │ │                     │  │
-│  │ - MDS scores     │ │ - Top 500   │ │ - Wallet setup      │  │
-│  │ - Trend charts   │ │   scanning  │ │ - Bridge flow       │  │
-│  │ - Proposal       │ │ - Non-Solana│ │ - Trading venues    │  │
-│  │   builder        │ │   filtering │ │ - DeFi opportunities│  │
-│  └───────┬──────────┘ └──────┬───────┘ └──────────┬──────────┘  │
-│           │                │                │                    │
-└───────────┼────────────────┼────────────────┼────────────────────┘
-            │                │                │
-┌───────────┼────────────────┼────────────────┼────────────────────┐
-│           ▼                ▼                ▼                    │
-│                        DATA LAYER                                │
-│                                                                 │
-│  ┌─────────────────────────────────────────────────────────┐    │
-│  │              Scoring Engine (MDS)                       │    │
-│  │  Aggregates signals → scores → ranks candidates        │    │
-│  └─────────────────────────────────────────────────────────┘    │
-│                                                                 │
-│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌────────────────┐     │
-│  │ Wormhole │ │ Jupiter  │ │ Social   │ │ On-chain       │     │
-│  │ Bridge   │ │ Search   │ │ Signals  │ │ Analytics      │     │
-│  │ Data     │ │ Intent   │ │ (X API)  │ │ (Helius, RPC)  │     │
-│  └──────────┘ └──────────┘ └──────────┘ └────────────────┘     │
-│                                                                 │
-│  ┌─────────────────────────────────────────────────────────┐    │
-│  │           Onboarding Analytics Engine                   │    │
-│  │  Tracks: wallet setup → bridge → trade → DeFi          │    │
-│  └─────────────────────────────────────────────────────────┘    │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────┐
+│                          FRONTEND (Next.js)                              │
+│                                                                          │
+│  ┌─────────────┐ ┌──────────┐ ┌──────────┐ ┌───────────┐ ┌──────────┐  │
+│  │  Discovery   │ │Dashboard │ │Migration │ │ Proposal  │ │Onboarding│  │
+│  │  Table       │ │ (MDS)   │ │ Health   │ │ Builder   │ │  Flow    │  │
+│  │             │ │          │ │ Monitor  │ │           │ │          │  │
+│  │ ~300 tokens │ │ Top 50   │ │ HYPE,MON │ │ Auto-gen  │ │ 4 tokens │  │
+│  │ Demand vote │ │ dynamic  │ │ LIT, INX │ │ bridge +  │ │ 5 steps  │  │
+│  │ MDS scoring │ │ scoring  │ │ health   │ │ liquidity │ │ each     │  │
+│  └──────┬──────┘ └────┬─────┘ └────┬─────┘ └─────┬─────┘ └────┬─────┘  │
+│          └─────────────┼───────────┼──────────────┼────────────┘         │
+└────────────────────────┼───────────┼──────────────┼──────────────────────┘
+                         ▼           ▼              ▼
+┌──────────────────────────────────────────────────────────────────────────┐
+│                           DATA LAYER                                     │
+│                                                                          │
+│  ┌─────────────────────────────────────────────────────────────────┐    │
+│  │  Scoring Engine (MDS) — 5 weighted signals, partial data aware  │    │
+│  │  Migration Analysis — bridge, liquidity, risk, competitive      │    │
+│  │  Health Monitor — volume, stability, bridge, momentum           │    │
+│  └─────────────────────────────────────────────────────────────────┘    │
+│                                                                          │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐     │
+│  │CoinGecko │ │Wormhole  │ │DefiLlama │ │ Jupiter  │ │ deBridge │     │
+│  │Market +  │ │Bridge    │ │TVL +     │ │Search    │ │Bridge    │     │
+│  │Social    │ │Data      │ │Protocols │ │Intent    │ │Data      │     │
+│  └──────────┘ └──────────┘ └──────────┘ └──────────┘ └──────────┘     │
+│                                                                          │
+│  ┌─────────────────────────────────────────────────────────────────┐    │
+│  │  Batch Processing (5/batch, 2s delay) + TTL Cache + Health Board│    │
+│  └─────────────────────────────────────────────────────────────────┘    │
+│                                                                          │
+└──────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Tech Stack
@@ -241,21 +245,27 @@ Tideshift turns Sunrise's migration pipeline from a series of one-off efforts in
 
 Tideshift is designed to grow with Sunrise — not as a hackathon demo, but as permanent infrastructure.
 
-**Phase 1 (Hackathon):** Core demand dashboard + onboarding flow for 1-2 tokens
+**Current (Hackathon):**
+- Dynamic demand dashboard scoring top 50 tokens from live data
+- Community demand voting and on-demand MDS scoring
+- Auto-generated migration proposals with bridge, liquidity, and risk analysis
+- Post-migration health monitoring for 4 tokens
+- White-label onboarding flows for 4 migrated tokens
 
-**Phase 2 (Post-Hackathon):**
-- Integrate directly with Sunrise's internal pipeline
-- Community voting/staking on migration candidates (users put skin in the game)
+**Next (Post-Hackathon):**
+- Integrate directly with Sunrise's internal pipeline via API
+- On-chain demand staking — users lock tokens to signal demand (skin in the game)
 - Automated onboarding flow generation — Sunrise lists a token, onboarding page spins up automatically
-- Post-migration health monitoring (liquidity depth, volume, user retention)
+- Real-time bridge monitoring with alerts for abnormal activity
+- Token team self-serve portal: apply, see demand score, get a readiness checklist
 
-**Phase 3 (Long-term):**
+**Long-term:**
 - Demand prediction model using historical migration data
-- Token team self-serve: teams apply, see their demand score, get a readiness checklist
 - Cross-ecosystem partnerships: connect with token teams on other chains proactively
 - RWA and institutional asset onboarding flows
+- Governance integration: community votes directly influence Sunrise's migration queue
 
-**The goal:** Every token that arrives on Solana through Sunrise comes with a data-backed demand thesis and a ready-made path for its community to follow.
+**The goal:** Every token that arrives on Solana through Sunrise comes with a data-backed demand thesis, an auto-generated migration plan, health monitoring from day one, and a ready-made path for its community to follow.
 
 ---
 
@@ -287,20 +297,21 @@ Open [http://localhost:3000](http://localhost:3000) to see the application.
 
 **[Live Demo: tideshift.vercel.app](https://tideshift.vercel.app)**
 
-The app runs on live API data. The Discovery page surfaces ~300 tokens without Solana presence from the top 500 by market cap. The Dashboard scores 12 candidate tokens using real signals from 5 API providers. API health status is visible in the sidebar.
+The app runs entirely on live API data from 5 providers. The Discovery page surfaces ~300 tokens without Solana presence. The Dashboard dynamically scores the top 50 non-Solana tokens. API health status is visible in the sidebar.
 
 ### Key Pages
 
 | Page | URL | Description |
 |------|-----|-------------|
-| Dashboard | [/](https://tideshift.vercel.app/) | Token rankings, MDS scores, bridge outflow charts, search trends |
-| Discovery | [/discovery](https://tideshift.vercel.app/discovery) | ~300 tokens without Solana CA, pagination, search, CSV export |
-| Token Detail | [/tokens/ondo](https://tideshift.vercel.app/tokens/ondo) | Radar chart, signal analysis, price chart, migration readiness |
+| Dashboard | [/](https://tideshift.vercel.app/) | 50 dynamically scored tokens, MDS rankings, bridge outflow charts |
+| Discovery | [/discovery](https://tideshift.vercel.app/discovery) | ~300 tokens, demand voting, on-demand MDS scoring, CSV export |
+| Token Detail | [/tokens/tether-gold](https://tideshift.vercel.app/tokens/tether-gold) | Radar chart, signal analysis, price chart, auto-proposal builder |
+| Migrations | [/migrations](https://tideshift.vercel.app/migrations) | Post-migration health monitor for HYPE, MON, LIT, INX |
 | Proposals | [/proposals](https://tideshift.vercel.app/proposals) | Saved migration proposals with copy/share |
 | Onboarding (HYPE) | [/onboard/hype](https://tideshift.vercel.app/onboard/hype) | 5-step guided migration: wallet → bridge → trade → DeFi |
-| Onboarding (MON) | [/onboard/mon](https://tideshift.vercel.app/onboard/mon) | Same flow, different token branding |
-
-> Demo video will be added before submission.
+| Onboarding (MON) | [/onboard/mon](https://tideshift.vercel.app/onboard/mon) | Same flow, Monad branding |
+| Onboarding (LIT) | [/onboard/lit](https://tideshift.vercel.app/onboard/lit) | Same flow, Lighter branding |
+| Onboarding (INX) | [/onboard/inx](https://tideshift.vercel.app/onboard/inx) | Same flow, Infinex branding |
 
 ---
 

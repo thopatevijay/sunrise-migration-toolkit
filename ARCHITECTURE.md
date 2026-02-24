@@ -2,11 +2,15 @@
 
 ## System Overview
 
-Tideshift consists of three main products sharing a common data layer:
+Tideshift covers the full token migration lifecycle with six integrated products sharing a common data layer:
 
-1. **Demand Discovery Dashboard** — identifies and ranks token migration candidates using real API data
-2. **Token Discovery** — scans top 500 tokens by market cap and surfaces those without a native Solana contract address
-3. **Community Onboarding Flow** — white-label onboarding for migrated token communities
+1. **Token Discovery** — scans top 500 tokens by market cap and surfaces ~300 without a native Solana contract address
+2. **Demand Discovery Dashboard** — dynamically scores the top 50 non-Solana tokens using 5 real-time signal categories
+3. **Community Demand Signals** — upvote system on Discovery tokens so users can signal migration demand
+4. **On-Demand MDS Scoring** — score any Discovery token's migration demand in real time via API
+5. **Migration Health Monitor** — tracks post-migration health of tokens already brought to Solana
+6. **Enhanced Proposal Builder** — auto-generates migration proposals with bridge recommendations, liquidity estimates, and risk assessment
+7. **Community Onboarding Flow** — white-label onboarding for migrated token communities (HYPE, MON, LIT, INX)
 
 ## Directory Structure
 
@@ -26,6 +30,9 @@ src/
 │   │   ├── discovery/
 │   │   │   ├── page.tsx              # Token Discovery (non-Solana tokens)
 │   │   │   └── loading.tsx           # Skeleton loading state
+│   │   ├── migrations/
+│   │   │   ├── page.tsx              # Migration Health Monitor
+│   │   │   └── loading.tsx           # Skeleton loading state
 │   │   └── proposals/page.tsx        # Saved migration proposals
 │   ├── (onboarding)/onboard/[token]/ # Community Onboarding Flow
 │   │   ├── layout.tsx                # Full-width branded layout
@@ -33,8 +40,11 @@ src/
 │   │   └── page.tsx                  # 5-step stepper (single page, not multi-route)
 │   └── api/
 │       ├── tokens/
-│       │   ├── route.ts              # GET /api/tokens (all candidates + stats)
-│       │   └── [id]/route.ts         # GET /api/tokens/:id (single token detail)
+│       │   ├── route.ts              # GET /api/tokens (all candidates + stats, 3-min cache)
+│       │   ├── [id]/route.ts         # GET /api/tokens/:id (single token detail)
+│       │   └── score/route.ts        # POST /api/tokens/score (on-demand MDS scoring)
+│       ├── migrations/
+│       │   └── route.ts              # GET /api/migrations (health data for migrated tokens)
 │       └── discovery/
 │           └── no-solana/route.ts    # GET /api/discovery/no-solana (non-Solana tokens)
 ├── components/
@@ -42,8 +52,9 @@ src/
 │   │   ├── stats-bar.tsx             # 4 KPI cards with animated counters
 │   │   ├── token-table.tsx           # Ranked, sortable, filterable token table
 │   │   ├── demand-chart.tsx          # Tabbed charts (bridge outflows, search, MDS)
-│   │   ├── discovery-table.tsx        # Non-Solana token table (pagination, CSV, CoinGecko links)
-│   │   ├── migrated-banner.tsx       # Horizontal scroll of migrated tokens
+│   │   ├── discovery-table.tsx        # Non-Solana token table (pagination, CSV, demand votes, MDS scoring)
+│   │   ├── migration-health-card.tsx # Per-token health card (score ring, sparkline, metrics)
+│   │   ├── migrated-banner.tsx       # Horizontal scroll of migrated tokens + health link
 │   │   ├── sparkline.tsx             # Tiny inline trend chart
 │   │   ├── token-detail/
 │   │   │   ├── token-header.tsx      # Hero with MDS score ring
@@ -53,7 +64,7 @@ src/
 │   │   │   ├── migration-readiness.tsx # NTT/team/bridge checklist
 │   │   │   └── similar-tokens.tsx    # Related token cards
 │   │   └── proposal-builder/
-│   │       └── proposal-form.tsx     # Proposal dialog + preview + clipboard
+│   │       └── proposal-form.tsx     # Auto-analysis proposal: bridge, liquidity, risk, competitive
 │   ├── onboarding/
 │   │   ├── onboarding-stepper.tsx    # 5-step progress bar
 │   │   ├── onboarding-analytics.tsx  # Funnel visualization component
@@ -79,12 +90,15 @@ src/
 ├── hooks/
 │   ├── use-mobile.tsx                # Responsive breakpoint hook
 │   ├── use-discovery.ts              # SWR hook for non-Solana token discovery (60min refresh)
+│   ├── use-migrations.ts             # SWR hook for migration health data (5min refresh)
 │   └── use-tokens.ts                 # SWR hooks (5min dashboard, 1min detail refresh)
 ├── lib/
 │   ├── data/
-│   │   ├── index.ts                  # Data facade — partial data approach, no demo fallback
-│   │   ├── token-discovery.ts        # Curated token registry (sync)
+│   │   ├── index.ts                  # Data facade — batch processing (5/batch), partial data approach
+│   │   ├── token-discovery.ts        # Dynamic token registry (async, top 50 from Discovery API)
 │   │   ├── discovery-no-solana.ts    # Non-Solana token discovery (2 CoinGecko calls, cross-ref)
+│   │   ├── migration-health.ts       # Post-migration health metrics (CoinGecko + WormholeScan)
+│   │   ├── demand-votes.ts           # Community demand voting (localStorage + seed data)
 │   │   ├── providers/                # Live API provider clients
 │   │   │   ├── cache.ts              # TTL-based in-memory cache (500 entries)
 │   │   │   ├── http.ts              # Shared fetch helper (timeout + retry)
@@ -100,7 +114,8 @@ src/
 │   ├── scoring/
 │   │   ├── mds.ts                    # calculateMDS() — normalize, weight, sum
 │   │   ├── normalizers.ts            # 5 signal normalizers (0-100)
-│   │   └── weights.ts               # Signal weights + labels
+│   │   ├── weights.ts               # Signal weights + labels
+│   │   └── migration-analysis.ts    # Auto-analysis: bridge recommendation, liquidity, risk, competitive
 │   ├── analytics/
 │   │   └── onboarding.ts            # Step tracking + funnel (localStorage)
 │   ├── types/
@@ -109,9 +124,9 @@ src/
 │   │   ├── discovery.ts              # DiscoveryToken, DiscoveryResponse, SolanaStatus
 │   │   └── proposals.ts              # Proposal storage (localStorage)
 │   ├── config/
-│   │   ├── tokens.ts                 # Token registry (12 candidates + 4 migrated) + types
-│   │   ├── chains.ts                 # 9 chain definitions
-│   │   └── onboarding.ts            # Per-token onboarding configs (HYPE, MON)
+│   │   ├── tokens.ts                 # Token registry (static fallback + 4 migrated) + chain map
+│   │   ├── chains.ts                 # 15 chain definitions (incl. sui, near, tron, fantom, aptos)
+│   │   └── onboarding.ts            # Per-token onboarding configs (HYPE, MON, LIT, INX)
 │   └── utils.ts                      # formatUSD, formatNumber, cn, etc.
 ```
 
@@ -122,17 +137,33 @@ Live APIs (CoinGecko, WormholeScan, DefiLlama, Jupiter, deBridge)
   ↓ trackedFetch() → records provider health + try/catch → null on failure
 Provider Clients (src/lib/data/providers/)
   ↓ TTL-cached, partial data approach
+  │
+  ├── Dynamic Token Registry (token-discovery.ts)
+  │     ↓ fetchNoSolanaTokens() → top 50 by market cap → TokenCandidate[]
+  │     ↓ Falls back to 12 static tokens if Discovery API fails
+  │
   ├── Data Facade (src/lib/data/index.ts)
+  │     ↓ Batch processing: 5 tokens/batch, 2s delay (respects CoinGecko 30/min)
   │     ↓ MDS scoring with weight redistribution for missing signals
-  │     API Routes (/api/tokens, /api/tokens/:id)
+  │     API Routes:
+  │       /api/tokens         → GET all candidates + stats (3-min response cache)
+  │       /api/tokens/:id     → GET single token detail
+  │       /api/tokens/score   → POST on-demand scoring for any token
   │     ↓ JSON response + provider health snapshot
   │     SWR Hooks (auto-refresh: 5min dashboard, 1min detail)
   │
-  └── Discovery (src/lib/data/discovery-no-solana.ts)
-        ↓ 2 CoinGecko calls → cross-reference → filter non-Solana
-        API Route (/api/discovery/no-solana)
-        ↓ JSON response
-        SWR Hook (auto-refresh: 60min)
+  ├── Migration Health (migration-health.ts)
+  │     ↓ CoinGecko market + WormholeScan bridge → health score composite
+  │     API Route: /api/migrations
+  │     SWR Hook (auto-refresh: 5min)
+  │
+  ├── Discovery (discovery-no-solana.ts)
+  │     ↓ 2 CoinGecko calls → cross-reference → filter non-Solana
+  │     API Route: /api/discovery/no-solana
+  │     SWR Hook (auto-refresh: 60min)
+  │
+  └── Demand Votes (demand-votes.ts)
+        ↓ localStorage-based voting (client-side only)
   ↓
 React Components + API Health Board (sidebar)
 ```
@@ -216,6 +247,8 @@ A token with 3/5 signals gets `confidence: 0.6`. Tokens with 0 signals are exclu
 | Wallet overlap | 30 min | Heuristic, infrequent change |
 | Protocol list | 1 hour | Protocols don't change often |
 | Token discovery | 1 hour | Top-500 list changes slowly |
+| API response (/api/tokens) | 3 min | Full dashboard response cache |
+| On-demand score | 5 min | Per-token MDS score cache |
 
 ### Error Handling
 
@@ -254,10 +287,72 @@ Result: ~300 tokens ranked by market cap, cached 60 minutes
 
 - Page size selector: 25 / 50 / 100 / 200 / All
 - Client-side pagination with prev/next controls
-- Sortable columns: rank, market cap, 24h volume, 7d change
+- Sortable columns: rank, market cap, 24h volume, 7d change, demand votes, MDS score
 - Search by token name, symbol, or chain
 - CSV export (full filtered dataset, includes CoinGecko URLs)
 - Clickable rows → CoinGecko token page (external link)
+- **Demand upvotes** — one vote per token per user (localStorage), seeded with demo data
+- **On-demand MDS scoring** — "Score" button fetches all 5 signals and displays MdsBadge inline
+
+## Dynamic Token Registry
+
+The dashboard no longer uses a hardcoded 12-token list. Instead:
+
+1. `discoverMigrationCandidates()` calls `fetchNoSolanaTokens()` (Discovery API)
+2. Takes the top 50 tokens by market cap
+3. Converts `DiscoveryToken` → `TokenCandidate` (maps origin chains via `DISCOVERY_CHAIN_MAP`)
+4. Falls back to 12 static tokens (`STATIC_TOKEN_CANDIDATES`) if Discovery API fails
+5. Batch processing: 5 tokens per batch with 2-second delay between batches
+6. Response cached for 3 minutes on `/api/tokens` route
+
+## On-Demand MDS Scoring
+
+`POST /api/tokens/score` accepts `{ coingeckoId, symbol, name, originChain }` and:
+1. Fetches all 5 signal categories (market, bridge, search, social, wallet overlap)
+2. Runs `calculateMDS()` on the signals
+3. Returns `{ mds, marketCap, volume24h, bridgeVolume7d }`
+4. Cached per token for 5 minutes
+
+## Migration Health Monitor
+
+Tracks post-migration health of tokens already on Solana (HYPE, MON, LIT, INX):
+
+### Health Score Calculation
+
+```
+healthScore = volumeScore × 0.30      (volume/marketCap ratio, normalized)
+            + stabilityScore × 0.30   (30d price change stability)
+            + bridgeScore × 0.20      (bridge activity volume, log-scaled)
+            + momentumScore × 0.20    (7d price momentum)
+```
+
+Status thresholds: healthy (70+), moderate (40-69), concerning (<40)
+
+### Data Sources
+
+- **CoinGecko**: price, market cap, volume, 30d price history
+- **WormholeScan**: 7d and 30d bridge volumes, bridge trend
+
+## Enhanced Proposal Builder
+
+Auto-generates structured migration analysis from token data:
+
+### Bridge Recommendation Logic
+- Ethereum/L2s with Wormhole support → NTT (Sunrise's preferred framework)
+- Other chains → CCIP or LayerZero OFT
+- Uses `CHAINS` config to check `bridgeSupport.wormhole`
+
+### Liquidity Estimates
+- Minimum: `volume24h × 0.1`
+- Recommended: `volume24h × 0.3`
+- Target pools: Jupiter (40%), Raydium (30%), Orca (20%), Kamino (10%)
+
+### Risk Assessment
+- Supply concentration: high if ratio > 3
+- Low wallet overlap: medium if < 15%
+- Declining bridge trend: medium if falling
+- Negative sentiment: medium if < 0
+- Overall level: high (any high factor), medium (2+ medium), low (default)
 
 ## API Health Board
 
@@ -292,3 +387,5 @@ Per-token configs in `lib/config/onboarding.ts` define:
 - Bridge routes and configurations
 - Trading venue links (Jupiter, etc.)
 - DeFi opportunities with APYs
+
+Supported tokens: HYPE (Hyperliquid), MON (Monad), LIT (Lighter), INX (Infinex)
