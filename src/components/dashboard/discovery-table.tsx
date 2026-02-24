@@ -20,12 +20,18 @@ import {
   ExternalLink,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
 } from "lucide-react";
 import { TrendIndicator } from "@/components/shared/trend-indicator";
 import { formatUSD } from "@/lib/utils";
 import type { DiscoveryToken } from "@/lib/types/discovery";
+import {
+  getAllVoteCounts,
+  hasUserVoted,
+  toggleVote,
+} from "@/lib/data/demand-votes";
 
-type SortKey = "rank" | "marketCap" | "volume24h" | "change7d";
+type SortKey = "rank" | "marketCap" | "volume24h" | "change7d" | "demand";
 type PageSize = 25 | 50 | 100 | 200 | "all";
 
 const PAGE_SIZES: { label: string; value: PageSize }[] = [
@@ -76,6 +82,28 @@ export function DiscoveryTable({ tokens, isLoading }: DiscoveryTableProps) {
   const [pageSize, setPageSize] = useState<PageSize>(50);
   const [page, setPage] = useState(1);
 
+  // Demand vote state
+  const [voteCounts, setVoteCounts] = useState<Record<string, number>>(getAllVoteCounts);
+  const [userVotes, setUserVotes] = useState<Set<string>>(() => {
+    const votes = new Set<string>();
+    tokens.forEach((t) => {
+      if (hasUserVoted(t.coingeckoId)) votes.add(t.coingeckoId);
+    });
+    return votes;
+  });
+
+  const handleVote = useCallback((e: React.MouseEvent, coingeckoId: string) => {
+    e.stopPropagation();
+    const result = toggleVote(coingeckoId);
+    setVoteCounts((prev) => ({ ...prev, [coingeckoId]: result.count }));
+    setUserVotes((prev) => {
+      const next = new Set(prev);
+      if (result.voted) next.add(coingeckoId);
+      else next.delete(coingeckoId);
+      return next;
+    });
+  }, []);
+
   const filtered = useMemo(() => {
     let result = [...tokens];
 
@@ -90,6 +118,11 @@ export function DiscoveryTable({ tokens, isLoading }: DiscoveryTableProps) {
     }
 
     result.sort((a, b) => {
+      if (sortKey === "demand") {
+        const aVal = voteCounts[a.coingeckoId] ?? 0;
+        const bVal = voteCounts[b.coingeckoId] ?? 0;
+        return sortAsc ? aVal - bVal : bVal - aVal;
+      }
       const aVal = a[sortKey];
       const bVal = b[sortKey];
       return sortAsc
@@ -98,7 +131,7 @@ export function DiscoveryTable({ tokens, isLoading }: DiscoveryTableProps) {
     });
 
     return result;
-  }, [tokens, search, sortKey, sortAsc]);
+  }, [tokens, search, sortKey, sortAsc, voteCounts]);
 
   // Pagination
   const effectivePageSize = pageSize === "all" ? filtered.length : pageSize;
@@ -224,6 +257,9 @@ export function DiscoveryTable({ tokens, isLoading }: DiscoveryTableProps) {
                 <TableHead className="text-xs">
                   <SortableHeader label="7d" sortKeyName="change7d" />
                 </TableHead>
+                <TableHead className="text-xs">
+                  <SortableHeader label="Demand" sortKeyName="demand" />
+                </TableHead>
                 <TableHead className="text-xs hidden lg:table-cell">
                   Chains
                 </TableHead>
@@ -279,6 +315,19 @@ export function DiscoveryTable({ tokens, isLoading }: DiscoveryTableProps) {
                   </TableCell>
                   <TableCell>
                     <TrendIndicator value={token.change7d} />
+                  </TableCell>
+                  <TableCell>
+                    <button
+                      onClick={(e) => handleVote(e, token.coingeckoId)}
+                      className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs transition-colors ${
+                        userVotes.has(token.coingeckoId)
+                          ? "bg-purple-500/20 text-purple-400 border border-purple-500/30"
+                          : "bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-foreground border border-transparent"
+                      }`}
+                    >
+                      <ChevronUp className={`h-3.5 w-3.5 ${userVotes.has(token.coingeckoId) ? "text-purple-400" : ""}`} />
+                      <span className="font-mono">{voteCounts[token.coingeckoId] ?? 0}</span>
+                    </button>
                   </TableCell>
                   <TableCell className="hidden lg:table-cell">
                     <div className="flex flex-wrap gap-1">
