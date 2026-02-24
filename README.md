@@ -4,7 +4,7 @@
 
 Built for the [Sunrise](https://sunrisedefi.com) Migrations track at the [Solana Graveyard Hackathon](https://solana.com/graveyard-hack).
 
-**[Live Demo](https://tideshift.vercel.app)** | Powered by live data from CoinGecko, WormholeScan, DefiLlama, Jupiter, and deBridge.
+**[Live Demo](https://tideshift.vercel.app)** | Powered by live data from 8 API providers — zero hardcoded or fabricated data.
 
 ---
 
@@ -63,6 +63,8 @@ Scans the top 500 tokens by market cap on CoinGecko and cross-references platfor
 - **Client-side pagination** — view 25, 50, 100, 200, or all tokens at once
 - **Search and sort** — filter by token name, symbol, or chain; sort by market cap, volume, or 7d change
 - **CSV export** — download the full filtered dataset with CoinGecko URLs for Sunrise BD team analysis
+- **Community demand voting** — persistent upvotes via Upstash Redis (anonymous, one vote per token per user)
+- **On-demand MDS scoring** — score any token in real time from the table
 - **Methodology banner** — transparent explanation of filtering criteria
 
 ### Part 2: Demand Discovery Dashboard
@@ -74,15 +76,15 @@ Dynamically scores the **top 50 non-Solana tokens** (by market cap) using 5 real
 | Signal | Weight | Source | What it tells us |
 |--------|--------|--------|-----------------|
 | Bridge outflows | 30% | WormholeScan, deBridge | Solana users leaving to buy tokens elsewhere |
-| Search intent | 25% | Jupiter | Tokens users search for but can't find on Solana |
-| Social demand | 20% | CoinGecko community data | Community sentiment and migration requests |
+| Search intent | 25% | DexScreener (DEX trading activity) | Real trading volume, liquidity, and pair counts across DEXs |
+| Social demand | 20% | CoinGecko community data | Twitter followers, Reddit activity, sentiment votes |
 | Origin-chain health | 15% | CoinGecko, DefiLlama | Token health: volume, TVL, holder count, market cap |
-| Wallet overlap | 10% | Heuristic model | How many Solana wallets also hold the origin token |
+| Wallet overlap | 10% | Heuristic model + DefiLlama TVL ratios | How many Solana wallets also hold the origin token |
 
 **Key features:**
 - **50 dynamically scored tokens** — refreshes from live data, cached 3 minutes
 - **Demand trends** — is interest growing or fading?
-- **Community demand voting** — users upvote tokens they want on Solana
+- **Community demand voting** — persistent via Upstash Redis
 - **On-demand MDS scoring** — score any Discovery token in real time from the table
 - **Auto-generated proposals** — bridge recommendation, liquidity estimates, risk assessment, competitive landscape
 
@@ -97,7 +99,7 @@ Tracks post-migration health of tokens already on Solana. Completes the lifecycl
 - **Bridge activity tracking** from WormholeScan
 - **Status badges**: healthy / moderate / concerning
 
-Currently monitoring: HYPE, MON, LIT, INX
+Currently monitoring: RENDER, HNT, POWR, GEOD
 
 ### Part 4: Community Onboarding Flow
 
@@ -129,8 +131,8 @@ A white-label, per-token onboarding experience that Sunrise deploys for each mig
 │  └── Direct swap link                                   │
 │                                                         │
 │  Step 5: Explore DeFi opportunities                     │
-│  ├── Lending (Kamino, MarginFi)                         │
-│  ├── Liquidity provision (with APY estimates)           │
+│  ├── Live APYs from DefiLlama (Kamino, MarginFi, etc.) │
+│  ├── Liquidity provision with real yield data           │
 │  └── Staking (if applicable)                            │
 │                                                         │
 │  Analytics: Track conversion at each step               │
@@ -141,13 +143,33 @@ A white-label, per-token onboarding experience that Sunrise deploys for each mig
 **Key features:**
 - **White-label** — customizable per token (colors, branding, messaging)
 - **Origin-chain aware** — detects which chain the user is coming from
+- **Live DeFi APYs** — real yield data from DefiLlama (Kamino, Raydium, MarginFi, etc.)
 - **Progress tracking** — users see where they are in the onboarding journey
-- **Analytics dashboard** — Sunrise sees conversion rates at each step (how many set up wallets, how many bridged, how many traded)
+- **Analytics dashboard** — Sunrise sees conversion rates at each step
 - **Shareable** — token communities can share the onboarding link on their Discord/Twitter
 
 **Who uses this:** Token communities migrating to Solana. Sunrise team, to measure migration success.
 
-Currently live for: HYPE (Hyperliquid), MON (Monad), LIT (Lighter), INX (Infinex)
+Currently live for: RENDER, HNT, POWR, GEOD
+
+---
+
+## Data Integrity
+
+**Every data point in Tideshift traces to a real API call. There is zero hardcoded, fabricated, or simulated data.**
+
+| Signal | Data Source | What We Fetch |
+|--------|-----------|--------------|
+| Market data | CoinGecko | Price, market cap, volume, TVL, ATH, 30d price history |
+| Social data | CoinGecko | Twitter followers, Reddit subscribers, Reddit active users, sentiment votes |
+| Search intent | DexScreener | 24h DEX volume, pair counts, Solana pairs, liquidity, trending/boost scores |
+| Bridge outflows | WormholeScan + deBridge | 7d/30d bridge volumes, timeseries, transaction counts |
+| TVL & protocols | DefiLlama | Protocol TVL, Solana TVL ratios, chain bridge volumes |
+| DeFi yields | DefiLlama Yields | Live APYs for Kamino, MarginFi, Raydium, Orca, Drift, Sanctum, Jupiter |
+| Token listing | Jupiter | Whether token exists on Jupiter (verified listing check) |
+| Holder counts | Helius DAS API | Real SPL token holder counts for Solana-listed tokens |
+| Wallet overlap | Heuristic + DefiLlama | Chain proximity + bridge data + protocol TVL ratios |
+| Demand votes | Upstash Redis | Persistent community voting (anonymous, one per user per token) |
 
 ---
 
@@ -155,19 +177,19 @@ Currently live for: HYPE (Hyperliquid), MON (Monad), LIT (Lighter), INX (Infinex
 
 ### Sunrise Team — Finding the Next Migration
 
-> **As a Sunrise team member**, I open the Demand Dashboard on Monday morning. The top-ranked token is ONDO (Ondo Finance) with an MDS of 87. The dashboard shows: 1,200+ Solana wallets bridged out to Ethereum last week specifically to buy ONDO, Jupiter search volume for "ONDO" spiked 4x in the past 14 days, and 340+ tweets from Solana-native accounts requesting ONDO on Solana. I click "Generate Proposal" and get a structured brief — token health metrics, community size, liquidity requirements — ready to share with the team and start the migration conversation with Ondo's team.
+> **As a Sunrise team member**, I open the Demand Dashboard on Monday morning. The top-ranked token is ONDO (Ondo Finance) with an MDS of 87. The dashboard shows: real bridge outflows from WormholeScan, $29M in 24h DEX trading volume from DexScreener, and strong community sentiment from CoinGecko. I click "Generate Proposal" and get a structured brief — token health metrics, community size, liquidity requirements — ready to share with the team and start the migration conversation with Ondo's team.
 
 ### Token Team — Deciding to Come to Solana
 
-> **As a token project founder on Ethereum**, I'm considering expanding to Solana but unsure if real demand exists. Someone shares the Tideshift link. I search for my token and see a demand score of 72, with data showing 800+ Solana wallets already hold my token via wrapped bridges, and social mentions are trending up. I see a "Request Migration via Sunrise" button, click it, and get connected with the Sunrise team — with all my demand data pre-filled in the application.
+> **As a token project founder on Ethereum**, I'm considering expanding to Solana but unsure if real demand exists. Someone shares the Tideshift link. I search for my token and see a demand score of 72, with data showing real DEX trading activity, bridge outflows, and community sentiment. I see a "Request Migration via Sunrise" button, click it, and get connected with the Sunrise team — with all my demand data pre-filled in the application.
 
 ### Community Member — Onboarding After Migration
 
-> **As a HYPE holder on Hyperliquid**, I see a tweet that HYPE is now live on Solana via Sunrise. The tweet links to `tideshift.app/onboard/hype`. I land on a branded page explaining what happened. I don't have a Solana wallet, so I follow the guided Phantom setup (takes 2 minutes). Next step pre-configures the bridge — I enter the amount, approve, and my HYPE arrives on Solana in under a minute. The final step shows me where to trade (Jupiter, with a direct swap link) and where to earn yield (Kamino lending at 8.2% APY). I went from "what is Solana?" to actively using Solana DeFi in 10 minutes.
+> **As a RENDER holder on Ethereum**, I see a tweet that RENDER is now live on Solana via Sunrise. The tweet links to `tideshift.app/onboard/render`. I land on a branded page explaining what happened. I don't have a Solana wallet, so I follow the guided Phantom setup (takes 2 minutes). Next step pre-configures the bridge — I enter the amount, approve, and my RENDER arrives on Solana in under a minute. The final step shows me where to trade (Jupiter, with a direct swap link) and where to earn yield (Kamino lending at 4.2% APY — real-time from DefiLlama). I went from "what is Solana?" to actively using Solana DeFi in 10 minutes.
 
 ### Solana Power User — Signaling Demand
 
-> **As an active Solana trader**, I keep bridging to Arbitrum to trade tokens that aren't on Solana yet. I visit the Demand Dashboard, see the tokens I care about ranked, and upvote the ones I want most. I can also submit a token I think is missing from the rankings. When one of my upvoted tokens finally migrates via Sunrise, I get notified and the onboarding page is ready for me to share with my community.
+> **As an active Solana trader**, I keep bridging to Arbitrum to trade tokens that aren't on Solana yet. I visit the Discovery page, see ~300 non-Solana tokens ranked, and upvote the ones I want most. My votes are persisted via Upstash Redis. When one of my upvoted tokens finally migrates via Sunrise, I get notified and the onboarding page is ready for me to share with my community.
 
 ---
 
@@ -176,12 +198,12 @@ Currently live for: HYPE (Hyperliquid), MON (Monad), LIT (Lighter), INX (Infinex
 | Without Tideshift | With Tideshift |
 |----------------|-------------|
 | Manual demand discovery | Token Discovery: ~300 non-Solana tokens surfaced automatically |
-| Anecdotal signals | Quantified demand with MDS scoring across 5 signal categories |
+| Anecdotal signals | Quantified demand with MDS scoring across 5 real-time signal categories |
 | No visibility into migration landscape | Full list of top-500 tokens without Solana CA, exportable as CSV |
-| No community input | Community demand voting — users upvote tokens they want |
+| No community input | Persistent community demand voting via Upstash Redis |
 | Manual proposal writing | Auto-generated proposals with bridge, liquidity, and risk analysis |
 | No post-migration tracking | Migration Health Monitor with health scores and trend data |
-| Community left to figure it out | Guided onboarding for 4 tokens (HYPE, MON, LIT, INX) |
+| Community left to figure it out | Guided onboarding for 4 tokens with live DeFi APYs |
 | No post-migration metrics | Conversion analytics at every step |
 | Each migration starts from scratch | Repeatable, scalable process |
 
@@ -199,9 +221,10 @@ Tideshift turns Sunrise's migration pipeline from a series of one-off efforts in
 │  │  Discovery   │ │Dashboard │ │Migration │ │ Proposal  │ │Onboarding│  │
 │  │  Table       │ │ (MDS)   │ │ Health   │ │ Builder   │ │  Flow    │  │
 │  │             │ │          │ │ Monitor  │ │           │ │          │  │
-│  │ ~300 tokens │ │ Top 50   │ │ HYPE,MON │ │ Auto-gen  │ │ 4 tokens │  │
-│  │ Demand vote │ │ dynamic  │ │ LIT, INX │ │ bridge +  │ │ 5 steps  │  │
-│  │ MDS scoring │ │ scoring  │ │ health   │ │ liquidity │ │ each     │  │
+│  │ ~300 tokens │ │ Top 50   │ │ RENDER,  │ │ Auto-gen  │ │ 4 tokens │  │
+│  │ Demand vote │ │ dynamic  │ │ HNT,     │ │ bridge +  │ │ 5 steps  │  │
+│  │ MDS scoring │ │ scoring  │ │ POWR,    │ │ liquidity │ │ each     │  │
+│  │ CSV export  │ │          │ │ GEOD     │ │           │ │          │  │
 │  └──────┬──────┘ └────┬─────┘ └────┬─────┘ └─────┬─────┘ └────┬─────┘  │
 │          └─────────────┼───────────┼──────────────┼────────────┘         │
 └────────────────────────┼───────────┼──────────────┼──────────────────────┘
@@ -216,10 +239,15 @@ Tideshift turns Sunrise's migration pipeline from a series of one-off efforts in
 │  └─────────────────────────────────────────────────────────────────┘    │
 │                                                                          │
 │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐     │
-│  │CoinGecko │ │Wormhole  │ │DefiLlama │ │ Jupiter  │ │ deBridge │     │
-│  │Market +  │ │Bridge    │ │TVL +     │ │Search    │ │Bridge    │     │
-│  │Social    │ │Data      │ │Protocols │ │Intent    │ │Data      │     │
+│  │CoinGecko │ │Wormhole  │ │DefiLlama │ │DexScreen │ │ Helius   │     │
+│  │Market +  │ │Bridge    │ │TVL +     │ │DEX Data  │ │ Holder   │     │
+│  │Social    │ │Data      │ │Yields    │ │+ Trends  │ │ Counts   │     │
 │  └──────────┘ └──────────┘ └──────────┘ └──────────┘ └──────────┘     │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐                               │
+│  │ Jupiter  │ │ deBridge │ │ Upstash  │                               │
+│  │ Listing  │ │ Bridge   │ │ Redis    │                               │
+│  │ Check    │ │ Data     │ │ Votes    │                               │
+│  └──────────┘ └──────────┘ └──────────┘                               │
 │                                                                          │
 │  ┌─────────────────────────────────────────────────────────────────┐    │
 │  │  Batch Processing (5/batch, 2s delay) + TTL Cache + Health Board│    │
@@ -234,8 +262,9 @@ Tideshift turns Sunrise's migration pipeline from a series of one-off efforts in
 |-------|-----------|
 | Frontend | Next.js 14, Tailwind CSS, Recharts, shadcn/ui, Framer Motion |
 | Data Fetching | SWR (auto-refresh), server-side TTL cache |
-| APIs (Tier 1, no auth) | WormholeScan, DefiLlama, Jupiter Lite, deBridge |
-| APIs (Tier 2, optional key) | CoinGecko (market data + token discovery) |
+| APIs (Free, no auth) | WormholeScan, DefiLlama, DexScreener, Jupiter, deBridge |
+| APIs (Free, key required) | CoinGecko (market + social), Helius (holder counts) |
+| Persistent Storage | Upstash Redis (community demand votes) |
 | Monitoring | API Health Board (real-time provider status in sidebar) |
 | Deployment | Vercel |
 
@@ -246,11 +275,12 @@ Tideshift turns Sunrise's migration pipeline from a series of one-off efforts in
 Tideshift is designed to grow with Sunrise — not as a hackathon demo, but as permanent infrastructure.
 
 **Current (Hackathon):**
-- Dynamic demand dashboard scoring top 50 tokens from live data
-- Community demand voting and on-demand MDS scoring
+- Dynamic demand dashboard scoring top 50 tokens from live data (8 API providers)
+- Community demand voting with persistent Upstash Redis storage
+- On-demand MDS scoring with real DexScreener + CoinGecko + Helius data
 - Auto-generated migration proposals with bridge, liquidity, and risk analysis
-- Post-migration health monitoring for 4 tokens
-- White-label onboarding flows for 4 migrated tokens
+- Post-migration health monitoring for 4 tokens (RENDER, HNT, POWR, GEOD)
+- White-label onboarding flows with live DeFi APYs from DefiLlama
 
 **Next (Post-Hackathon):**
 - Integrate directly with Sunrise's internal pipeline via API
@@ -289,7 +319,16 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) to see the application.
 
-> **Note:** The app uses live API data from CoinGecko, WormholeScan, DefiLlama, Jupiter, and deBridge. No API keys are required for basic functionality — free tiers are sufficient. Add a `COINGECKO_API_KEY` in `.env` for higher rate limits.
+### Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `COINGECKO_API_KEY` | Optional | Increases rate limit from 10/min to 30/min ([free key](https://www.coingecko.com/en/api)) |
+| `HELIUS_API_KEY` | Optional | Real on-chain holder counts via DAS API ([free tier](https://helius.dev): 1M credits/mo) |
+| `UPSTASH_REDIS_REST_URL` | Optional | Persistent community demand votes ([free tier](https://upstash.com): 10K cmds/day) |
+| `UPSTASH_REDIS_REST_TOKEN` | Optional | Redis auth token for Upstash |
+
+> **Note:** All Tier 1 APIs (WormholeScan, DefiLlama, DexScreener, Jupiter, deBridge) require no API keys. The app works without any env variables — keys unlock higher rate limits and additional features.
 
 ---
 
@@ -297,7 +336,7 @@ Open [http://localhost:3000](http://localhost:3000) to see the application.
 
 **[Live Demo: tideshift.vercel.app](https://tideshift.vercel.app)**
 
-The app runs entirely on live API data from 5 providers. The Discovery page surfaces ~300 tokens without Solana presence. The Dashboard dynamically scores the top 50 non-Solana tokens. API health status is visible in the sidebar.
+The app runs entirely on live API data from 8 providers. The Discovery page surfaces ~300 tokens without Solana presence. The Dashboard dynamically scores the top 50 non-Solana tokens. API health status is visible in the sidebar.
 
 ### Key Pages
 
@@ -306,12 +345,12 @@ The app runs entirely on live API data from 5 providers. The Discovery page surf
 | Dashboard | [/](https://tideshift.vercel.app/) | 50 dynamically scored tokens, MDS rankings, bridge outflow charts |
 | Discovery | [/discovery](https://tideshift.vercel.app/discovery) | ~300 tokens, demand voting, on-demand MDS scoring, CSV export |
 | Token Detail | [/tokens/tether-gold](https://tideshift.vercel.app/tokens/tether-gold) | Radar chart, signal analysis, price chart, auto-proposal builder |
-| Migrations | [/migrations](https://tideshift.vercel.app/migrations) | Post-migration health monitor for HYPE, MON, LIT, INX |
+| Migrations | [/migrations](https://tideshift.vercel.app/migrations) | Post-migration health monitor for RENDER, HNT, POWR, GEOD |
 | Proposals | [/proposals](https://tideshift.vercel.app/proposals) | Saved migration proposals with copy/share |
-| Onboarding (HYPE) | [/onboard/hype](https://tideshift.vercel.app/onboard/hype) | 5-step guided migration: wallet → bridge → trade → DeFi |
-| Onboarding (MON) | [/onboard/mon](https://tideshift.vercel.app/onboard/mon) | Same flow, Monad branding |
-| Onboarding (LIT) | [/onboard/lit](https://tideshift.vercel.app/onboard/lit) | Same flow, Lighter branding |
-| Onboarding (INX) | [/onboard/inx](https://tideshift.vercel.app/onboard/inx) | Same flow, Infinex branding |
+| Onboarding (RENDER) | [/onboard/render](https://tideshift.vercel.app/onboard/render) | 5-step guided migration: wallet → bridge → trade → DeFi |
+| Onboarding (HNT) | [/onboard/hnt](https://tideshift.vercel.app/onboard/hnt) | Same flow, Helium branding |
+| Onboarding (POWR) | [/onboard/powr](https://tideshift.vercel.app/onboard/powr) | Same flow, Powerledger branding |
+| Onboarding (GEOD) | [/onboard/geod](https://tideshift.vercel.app/onboard/geod) | Same flow, GEODNET branding |
 
 ---
 
@@ -330,4 +369,4 @@ The app runs entirely on live API data from 5 providers. The Discovery page surf
 
 ---
 
-*Built for the Sunrise Migrations track at the Solana Graveyard Hackathon (Feb 12–27, 2026)*
+*Built for the Sunrise Migrations track at the Solana Graveyard Hackathon (Feb 12-27, 2026)*

@@ -2,15 +2,15 @@
 
 ## System Overview
 
-Tideshift covers the full token migration lifecycle with six integrated products sharing a common data layer:
+Tideshift covers the full token migration lifecycle with seven integrated products sharing a common data layer:
 
 1. **Token Discovery** — scans top 500 tokens by market cap and surfaces ~300 without a native Solana contract address
 2. **Demand Discovery Dashboard** — dynamically scores the top 50 non-Solana tokens using 5 real-time signal categories
-3. **Community Demand Signals** — upvote system on Discovery tokens so users can signal migration demand
+3. **Community Demand Signals** — persistent upvote system (Upstash Redis) so users can signal migration demand
 4. **On-Demand MDS Scoring** — score any Discovery token's migration demand in real time via API
 5. **Migration Health Monitor** — tracks post-migration health of tokens already brought to Solana
 6. **Enhanced Proposal Builder** — auto-generates migration proposals with bridge recommendations, liquidity estimates, and risk assessment
-7. **Community Onboarding Flow** — white-label onboarding for migrated token communities (HYPE, MON, LIT, INX)
+7. **Community Onboarding Flow** — white-label onboarding for migrated token communities (RENDER, HNT, POWR, GEOD)
 
 ## Directory Structure
 
@@ -45,8 +45,13 @@ src/
 │       │   └── score/route.ts        # POST /api/tokens/score (on-demand MDS scoring)
 │       ├── migrations/
 │       │   └── route.ts              # GET /api/migrations (health data for migrated tokens)
-│       └── discovery/
-│           └── no-solana/route.ts    # GET /api/discovery/no-solana (non-Solana tokens)
+│       ├── discovery/
+│       │   └── no-solana/route.ts    # GET /api/discovery/no-solana (non-Solana tokens)
+│       ├── votes/
+│       │   ├── route.ts              # GET/POST /api/votes (community demand votes via Upstash Redis)
+│       │   └── user/route.ts         # GET /api/votes/user (per-user vote history)
+│       └── yields/
+│           └── route.ts              # GET /api/yields (live DeFi APYs from DefiLlama)
 ├── components/
 │   ├── dashboard/
 │   │   ├── stats-bar.tsx             # 4 KPI cards with animated counters
@@ -73,7 +78,7 @@ src/
 │   │       ├── wallet-step.tsx       # Phantom/Backpack/Solflare wallet setup
 │   │       ├── bridge-step.tsx       # Bridge via Sunrise link
 │   │       ├── trade-step.tsx        # Jupiter swap link
-│   │       └── defi-step.tsx         # DeFi opportunities + completion
+│   │       └── defi-step.tsx         # DeFi opportunities + live APYs from DefiLlama
 │   ├── shared/
 │   │   ├── chain-badge.tsx           # Chain logo + name
 │   │   ├── demo-banner.tsx           # Data source indicator (live/partial)
@@ -98,26 +103,29 @@ src/
 │   │   ├── token-discovery.ts        # Dynamic token registry (async, top 50 from Discovery API)
 │   │   ├── discovery-no-solana.ts    # Non-Solana token discovery (2 CoinGecko calls, cross-ref)
 │   │   ├── migration-health.ts       # Post-migration health metrics (CoinGecko + WormholeScan)
-│   │   ├── demand-votes.ts           # Community demand voting (localStorage + seed data)
+│   │   ├── demand-votes.ts           # Community demand voting client (Upstash Redis via API)
 │   │   ├── providers/                # Live API provider clients
 │   │   │   ├── cache.ts              # TTL-based in-memory cache (500 entries)
-│   │   │   ├── http.ts              # Shared fetch helper (timeout + retry)
+│   │   │   ├── http.ts               # Shared fetch helper (timeout + retry)
 │   │   │   ├── health.ts             # API health tracker (trackedFetch + status snapshot)
-│   │   │   ├── coingecko.ts          # Market data + social proxy
+│   │   │   ├── coingecko.ts          # Market data + real community/social data + platform lookups
+│   │   │   ├── dexscreener.ts        # DEX trading activity (volume, pairs, liquidity, boosts)
+│   │   │   ├── helius.ts             # Real SPL token holder counts (DAS getTokenAccounts)
 │   │   │   ├── wormhole.ts           # Bridge outflow data (WormholeScan)
-│   │   │   ├── defillama.ts          # TVL, protocol data, bridge volumes
-│   │   │   ├── jupiter.ts            # Search intent proxy + prices
+│   │   │   ├── defillama.ts          # TVL, protocol data, bridge volumes, Solana TVL ratios
+│   │   │   ├── defillama-yields.ts   # Live DeFi APYs (Kamino, MarginFi, Raydium, Orca, etc.)
+│   │   │   ├── jupiter.ts            # Jupiter listing verification + prices
 │   │   │   ├── debridge.ts           # Supplemental bridge data
-│   │   │   ├── wallet-heuristic.ts   # Wallet overlap estimation
+│   │   │   ├── wallet-heuristic.ts   # Wallet overlap estimation (chain proximity + TVL ratios)
 │   │   │   └── index.ts              # Re-exports all providers
 │   │   └── (no demo folder — all data from live APIs)
 │   ├── scoring/
 │   │   ├── mds.ts                    # calculateMDS() — normalize, weight, sum
 │   │   ├── normalizers.ts            # 5 signal normalizers (0-100)
-│   │   ├── weights.ts               # Signal weights + labels
-│   │   └── migration-analysis.ts    # Auto-analysis: bridge recommendation, liquidity, risk, competitive
+│   │   ├── weights.ts                # Signal weights + labels
+│   │   └── migration-analysis.ts     # Auto-analysis: bridge recommendation, liquidity, risk, competitive
 │   ├── analytics/
-│   │   └── onboarding.ts            # Step tracking + funnel (localStorage)
+│   │   └── onboarding.ts             # Step tracking + funnel (localStorage)
 │   ├── types/
 │   │   ├── scoring.ts                # MDS interfaces + score utilities
 │   │   ├── signals.ts                # Signal type definitions (bridge, search, social, market, wallet)
@@ -126,14 +134,14 @@ src/
 │   ├── config/
 │   │   ├── tokens.ts                 # Token registry (static fallback + 4 migrated) + chain map
 │   │   ├── chains.ts                 # 15 chain definitions (incl. sui, near, tron, fantom, aptos)
-│   │   └── onboarding.ts            # Per-token onboarding configs (HYPE, MON, LIT, INX)
+│   │   └── onboarding.ts             # Per-token onboarding configs (RENDER, HNT, POWR, GEOD)
 │   └── utils.ts                      # formatUSD, formatNumber, cn, etc.
 ```
 
 ## Data Flow
 
 ```
-Live APIs (CoinGecko, WormholeScan, DefiLlama, Jupiter, deBridge)
+Live APIs (8 providers — zero hardcoded data)
   ↓ trackedFetch() → records provider health + try/catch → null on failure
 Provider Clients (src/lib/data/providers/)
   ↓ TTL-cached, partial data approach
@@ -145,9 +153,10 @@ Provider Clients (src/lib/data/providers/)
   ├── Data Facade (src/lib/data/index.ts)
   │     ↓ Batch processing: 5 tokens/batch, 2s delay (respects CoinGecko 30/min)
   │     ↓ MDS scoring with weight redistribution for missing signals
+  │     ↓ Helius holder count enrichment for detail pages (if Solana mint exists)
   │     API Routes:
   │       /api/tokens         → GET all candidates + stats (3-min response cache)
-  │       /api/tokens/:id     → GET single token detail
+  │       /api/tokens/:id     → GET single token detail (enriched with Helius holders)
   │       /api/tokens/score   → POST on-demand scoring for any token
   │     ↓ JSON response + provider health snapshot
   │     SWR Hooks (auto-refresh: 5min dashboard, 1min detail)
@@ -162,8 +171,15 @@ Provider Clients (src/lib/data/providers/)
   │     API Route: /api/discovery/no-solana
   │     SWR Hook (auto-refresh: 60min)
   │
-  └── Demand Votes (demand-votes.ts)
-        ↓ localStorage-based voting (client-side only)
+  ├── Demand Votes (demand-votes.ts → Upstash Redis)
+  │     ↓ Persistent voting via /api/votes (anonymous user IDs, one vote per token)
+  │     API Routes:
+  │       /api/votes          → GET all counts, POST toggle vote
+  │       /api/votes/user     → GET per-user voted token IDs
+  │
+  └── DeFi Yields (defillama-yields.ts)
+        ↓ Live APYs from DefiLlama Yields API for onboarding DeFi step
+        API Route: /api/yields?protocols=Kamino+Finance,MarginFi,Raydium
   ↓
 React Components + API Health Board (sidebar)
 ```
@@ -175,29 +191,34 @@ The scoring engine aggregates five signal categories into a single score per tok
 ### Signal Categories
 
 **1. Bridge Outflow Volume (weight: 0.30)**
-- Source: WormholeScan `top-assets-by-volume` API
+- Source: WormholeScan `top-assets-by-volume` API + deBridge supplemental data
 - Metric: Cross-chain bridge volume for this token (7d + 30d)
+- Estimation fallback: When WormholeScan lacks data, uses market cap × volume ratio
 - Higher outflow = active cross-chain demand for this asset
 
 **2. Search Intent (weight: 0.25)**
-- Source: Jupiter Lite `token/v2/search` API
-- Metric: Whether token exists on Solana/Jupiter — absence = unmet demand
-- Market cap rank modulates estimated search volume
+- Source: DexScreener search API + boost/trending API + Jupiter listing check
+- Metrics: 24h DEX volume, transaction count, liquidity, pair count, Solana pair count, boost score
+- Normalization: 35% volume ($1M+ = max) + 25% txn count (10K+ = max) + 15% liquidity ($5M+ = max) + unmet demand bonus + boost bonus
+- Unmet demand: Tokens NOT on Jupiter get +15 bonus (not on Solana = higher demand signal)
 
 **3. Social Demand (weight: 0.20)**
-- Source: CoinGecko community data (twitter followers, sentiment votes, reddit)
-- Metric: Community size and sentiment as proxy for migration demand
-- Sentiment normalization: CoinGecko % → -1 to +1 scale
+- Source: CoinGecko community data (real API fields, not fabricated)
+- Metrics: Twitter followers, Reddit subscribers, Reddit active users (48h), sentiment votes
+- Community score: Weighted composite (40% twitter + 20% reddit subs + 20% reddit active + 20% sentiment)
+- Normalization: 60% community score + 25% sentiment + 15% reddit engagement ratio
 
 **4. Origin Chain Health (weight: 0.15)**
 - Source: CoinGecko market data + DefiLlama protocols
 - Metrics: Market cap, 24h volume, TVL, holder count
-- Filters out dead/dying tokens — only surface healthy candidates
+- Holder count: Real on-chain data from Helius DAS API (for tokens with Solana mint), otherwise CoinGecko estimate marked as `(est.)`
+- Normalization: 30% mcap ($5B+ = max) + 25% volume ($500M+ = max) + 25% TVL ($5B+ = max) + 20% holders (500K+ = max)
 
 **5. Ecosystem Wallet Overlap (weight: 0.10)**
-- Source: Heuristic model using bridge volume, chain proximity, category affinity
+- Source: Heuristic model using bridge volume, chain proximity, category affinity, DefiLlama Solana TVL ratios
 - Metric: Estimated percentage of token holders with active Solana wallets
 - Chain proximity scores: Arbitrum (18%) > Optimism (16%) > Ethereum (15%) > Base (14%)
+- Enhanced with real DefiLlama protocol TVL data for cross-chain presence estimation
 
 ### Score Calculation (Partial Data Approach)
 
@@ -225,16 +246,23 @@ A token with 3/5 signals gets `confidence: 0.6`. Tokens with 0 signals are exclu
 | API | Base URL | Data | Rate Limit |
 |-----|----------|------|------------|
 | WormholeScan | `api.wormholescan.io/api/v1` | Bridge volumes, scorecards | 1000/min |
-| DefiLlama | `api.llama.fi` / `bridges.llama.fi` | TVL, protocols, bridge volumes | ~100/min |
-| Jupiter Lite | `lite-api.jup.ag` | Token search, prices | 60/min |
+| DefiLlama | `api.llama.fi` / `bridges.llama.fi` / `yields.llama.fi` | TVL, protocols, bridge volumes, DeFi APYs | ~100/min |
+| DexScreener | `api.dexscreener.com` | DEX trading pairs, volume, liquidity, trending boosts | 300/min |
+| Jupiter | `lite-api.jup.ag` / `tokens.jup.ag` | Token listing verification, prices | 60/min |
 | deBridge | `dln.debridge.finance/v1.0` | Supported chains, orders | Generous |
 
 ### Tier 2: Free with API Key (optional)
 
 | API | Base URL | Data | Rate Limit |
 |-----|----------|------|------------|
-| CoinGecko | `api.coingecko.com/api/v3` | Market data, social proxy | 10-30/min (30 with key) |
-| Helius | `mainnet.helius-rpc.com` | Wallet analysis (DAS) | 10 rps with key |
+| CoinGecko | `api.coingecko.com/api/v3` | Market data, community/social data, platforms | 10-30/min (30 with key) |
+| Helius | `mainnet.helius-rpc.com` | Real SPL token holder counts (DAS API) | 10 rps with key |
+
+### Tier 3: Persistent Storage
+
+| Service | Purpose | Free Tier |
+|---------|---------|-----------|
+| Upstash Redis | Community demand votes (anonymous, persistent) | 10K commands/day |
 
 ### Caching Strategy
 
@@ -242,9 +270,10 @@ A token with 3/5 signals gets `confidence: 0.6`. Tokens with 0 signals are exclu
 |-----------|-----|--------|
 | Market data | 2 min | Prices change frequently |
 | Bridge data | 5 min | Volume updates regularly |
-| Search data | 10 min | Search intent is stable |
+| Search/DEX data | 10 min | Trading activity is moderately stable |
 | Social data | 15 min | Community metrics change slowly |
 | Wallet overlap | 30 min | Heuristic, infrequent change |
+| Holder counts (Helius) | 30 min | On-chain data, changes slowly |
 | Protocol list | 1 hour | Protocols don't change often |
 | Token discovery | 1 hour | Top-500 list changes slowly |
 | API response (/api/tokens) | 3 min | Full dashboard response cache |
@@ -291,7 +320,7 @@ Result: ~300 tokens ranked by market cap, cached 60 minutes
 - Search by token name, symbol, or chain
 - CSV export (full filtered dataset, includes CoinGecko URLs)
 - Clickable rows → CoinGecko token page (external link)
-- **Demand upvotes** — one vote per token per user (localStorage), seeded with demo data
+- **Demand upvotes** — persistent via Upstash Redis (anonymous user IDs, one vote per token)
 - **On-demand MDS scoring** — "Score" button fetches all 5 signals and displays MdsBadge inline
 
 ## Dynamic Token Registry
@@ -308,14 +337,15 @@ The dashboard no longer uses a hardcoded 12-token list. Instead:
 ## On-Demand MDS Scoring
 
 `POST /api/tokens/score` accepts `{ coingeckoId, symbol, name, originChain }` and:
-1. Fetches all 5 signal categories (market, bridge, search, social, wallet overlap)
-2. Runs `calculateMDS()` on the signals
-3. Returns `{ mds, marketCap, volume24h, bridgeVolume7d }`
-4. Cached per token for 5 minutes
+1. Checks Jupiter listing status (used for unmet demand signal)
+2. Fetches all 5 signal categories in parallel (market via CoinGecko, DEX activity via DexScreener, social via CoinGecko, bridge via WormholeScan/deBridge, wallet overlap via heuristic)
+3. Runs `calculateMDS()` on the signals
+4. Returns `{ mds, marketCap, volume24h, bridgeVolume7d }`
+5. Cached per token for 5 minutes
 
 ## Migration Health Monitor
 
-Tracks post-migration health of tokens already on Solana (HYPE, MON, LIT, INX):
+Tracks post-migration health of tokens already on Solana (RENDER, HNT, POWR, GEOD):
 
 ### Health Score Calculation
 
@@ -356,7 +386,7 @@ Auto-generates structured migration analysis from token data:
 
 ## API Health Board
 
-Real-time sidebar panel showing the status of all 5 API providers (CoinGecko, WormholeScan, DefiLlama, Jupiter, deBridge).
+Real-time sidebar panel showing the status of all API providers (CoinGecko, WormholeScan, DefiLlama, Jupiter, deBridge, DexScreener, Helius).
 
 ### How It Works
 
@@ -373,6 +403,13 @@ Real-time sidebar panel showing the status of all 5 API providers (CoinGecko, Wo
 The onboarding flow is a single page with 5 steps managed via React state:
 1. Welcome → 2. Wallet → 3. Bridge → 4. Trade → 5. DeFi
 
+### Live DeFi APYs
+
+The DeFi step fetches real yield data from DefiLlama Yields API:
+- `/api/yields?protocols=Kamino+Finance,MarginFi,Raydium` returns live APYs
+- Protocol slugs mapped to DefiLlama project names (e.g., Kamino → `kamino-lend`, MarginFi → `save`)
+- Displays "Live" badge with real APY percentages and TVL data
+
 ### Analytics Funnel
 
 Step completion tracked via localStorage:
@@ -386,6 +423,21 @@ Per-token configs in `lib/config/onboarding.ts` define:
 - Branding colors and gradients
 - Bridge routes and configurations
 - Trading venue links (Jupiter, etc.)
-- DeFi opportunities with APYs
+- DeFi opportunities with live APYs
 
-Supported tokens: HYPE (Hyperliquid), MON (Monad), LIT (Lighter), INX (Infinex)
+Supported tokens: RENDER, HNT (Helium), POWR (Powerledger), GEOD (GEODNET)
+
+## Data Integrity
+
+All MDS signals trace to real APIs — no hardcoded, fabricated, or simulated data:
+
+| Signal | Provider | What's Real |
+|--------|----------|------------|
+| Bridge outflow | WormholeScan + deBridge | Actual cross-chain bridge volumes and timeseries |
+| Search intent | DexScreener | Real 24h DEX volume, pair counts, liquidity, trending data |
+| Social demand | CoinGecko | Real twitter followers, reddit subscribers, sentiment votes |
+| Chain health | CoinGecko + DefiLlama | Real market cap, volume, TVL, price history |
+| Holder counts | Helius DAS API | Real on-chain SPL token holder counts (paginated scan) |
+| Wallet overlap | Heuristic + DefiLlama | Chain proximity model enhanced with real protocol TVL ratios |
+| DeFi yields | DefiLlama Yields | Real APYs for Kamino, MarginFi, Raydium, etc. |
+| Demand votes | Upstash Redis | Persistent community votes (not localStorage) |
