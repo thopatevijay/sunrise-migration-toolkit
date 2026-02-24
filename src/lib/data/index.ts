@@ -266,8 +266,8 @@ export async function getTokenDetail(id: string): Promise<TokenDetail | null> {
   };
 }
 
-export async function getAggregateStats(): Promise<AggregateStats> {
-  const tokens = await getTokenCandidates();
+export async function getAggregateStats(precomputed?: TokenWithScore[]): Promise<AggregateStats> {
+  const tokens = precomputed ?? await getTokenCandidates();
   const migrated = getMigratedTokens();
 
   if (tokens.length === 0) {
