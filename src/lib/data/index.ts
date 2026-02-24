@@ -43,12 +43,12 @@ export interface TokenDetail extends TokenWithScore {
   };
   bridgeDataSource: "live" | "estimated";
   socialData: {
-    tweets7d: number;
-    tweets30d: number;
+    twitterFollowers: number;
+    redditSubscribers: number;
+    redditActive48h: number;
+    sentimentUpPct: number;
     sentiment: number;
-    topHashtags: string[];
-    demandMentions: number;
-    influencerMentions: number;
+    communityScore: number;
   };
   dataSource: "live" | "partial";
 }
@@ -90,7 +90,7 @@ async function fetchSignals(
   const [marketResult, searchResult, socialResult] = await Promise.allSettled([
     fetchMarketPromise,
     fetchSearchIntent(token.id, token.symbol, 50),
-    fetchSocialData(token.id, token.coingeckoId, token.symbol),
+    fetchSocialData(token.id, token.coingeckoId),
   ]);
 
   // Market data
@@ -266,12 +266,12 @@ export async function getTokenDetail(id: string): Promise<TokenDetail | null> {
     },
     bridgeDataSource: bridge?.dataSource ?? "estimated",
     socialData: {
-      tweets7d: social?.tweets7d ?? 0,
-      tweets30d: social?.tweets30d ?? 0,
+      twitterFollowers: social?.twitterFollowers ?? 0,
+      redditSubscribers: social?.redditSubscribers ?? 0,
+      redditActive48h: social?.redditActive48h ?? 0,
+      sentimentUpPct: social?.sentimentUpPct ?? 50,
       sentiment: social?.sentiment ?? 0,
-      topHashtags: social?.topHashtags ?? [],
-      demandMentions: social?.demandMentions ?? 0,
-      influencerMentions: social?.influencerMentions ?? 0,
+      communityScore: social?.communityScore ?? 0,
     },
     dataSource,
   };

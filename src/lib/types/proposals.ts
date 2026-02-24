@@ -9,7 +9,7 @@ export interface MigrationProposal {
   createdAt: string;
   marketCap: number;
   bridgeVolume7d: number;
-  demandMentions: number;
+  communityScore: number;
   walletOverlap: number;
 }
 

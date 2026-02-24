@@ -35,16 +35,19 @@ export function normalizeSearchIntent(data: TokenSearchData): number {
 
 /**
  * Social Demand Score (0-100)
- * Based on demand-specific mentions, sentiment, and influencer reach
+ * Based on real CoinGecko community data: followers, reddit activity, sentiment
  */
 export function normalizeSocialDemand(data: TokenSocialData): number {
-  // 200+ demand mentions = max
-  const mentionScore = normalize(data.demandMentions, 0, 200) * 0.5;
-  // Sentiment from 0-1 mapped to 0-100
-  const sentimentScore = Math.max(0, data.sentiment) * 100 * 0.3;
-  // 30+ influencer mentions = max
-  const influencerScore = normalize(data.influencerMentions, 0, 30) * 0.2;
-  return Math.min(100, Math.round(mentionScore + sentimentScore + influencerScore));
+  // communityScore is already a 0-100 composite, weight 60%
+  const communityPart = data.communityScore * 0.6;
+  // Positive sentiment bonus, weight 25%
+  const sentimentPart = Math.max(0, data.sentiment) * 100 * 0.25;
+  // Reddit engagement ratio as activity signal, weight 15%
+  const engagementRatio = data.redditSubscribers > 0
+    ? Math.min(100, (data.redditActive48h / data.redditSubscribers) * 1000)
+    : 0;
+  const engagementPart = engagementRatio * 0.15;
+  return Math.min(100, Math.round(communityPart + sentimentPart + engagementPart));
 }
 
 /**

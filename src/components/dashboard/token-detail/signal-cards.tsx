@@ -104,23 +104,26 @@ export function SignalCards({ token }: SignalCardsProps) {
       title: "Social Demand",
       icon: MessageCircle,
       color: "#34d399",
-      value: `${token.socialData.demandMentions}`,
-      label: "demand mentions (7d)",
+      value: `${token.socialData.communityScore}/100`,
+      label: "community score",
       score: token.mds.breakdown.socialDemand.normalized,
       extra: (
         <div className="space-y-2 mt-2">
           <div className="flex justify-between text-xs">
             <span className="text-muted-foreground">Sentiment</span>
-            <span className={token.socialData.sentiment > 0.6 ? "text-emerald-400" : "text-yellow-400"}>
-              {(token.socialData.sentiment * 100).toFixed(0)}% positive
+            <span className={token.socialData.sentimentUpPct > 60 ? "text-emerald-400" : "text-yellow-400"}>
+              {token.socialData.sentimentUpPct.toFixed(0)}% positive
             </span>
           </div>
-          <div className="flex flex-wrap gap-1">
-            {token.socialData.topHashtags.slice(0, 3).map((tag) => (
-              <Badge key={tag} variant="outline" className="text-[10px] border-white/10">
-                {tag}
-              </Badge>
-            ))}
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <div>
+              <span className="text-muted-foreground">Twitter</span>
+              <p className="font-mono">{formatNumber(token.socialData.twitterFollowers)}</p>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Reddit</span>
+              <p className="font-mono">{formatNumber(token.socialData.redditSubscribers)}</p>
+            </div>
           </div>
         </div>
       ),

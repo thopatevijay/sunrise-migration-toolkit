@@ -75,7 +75,7 @@ export function ProposalForm({ token, open, onOpenChange }: ProposalFormProps) {
       createdAt: new Date().toISOString(),
       marketCap: token.marketCap,
       bridgeVolume7d: token.bridgeVolume7d,
-      demandMentions: token.socialData.demandMentions,
+      communityScore: token.socialData.communityScore,
       walletOverlap: token.walletOverlap.overlapPercentage,
     };
     saveProposal(proposal);
@@ -348,9 +348,9 @@ DEMAND EVIDENCE
 ${"-".repeat(30)}
 Bridge Outflow (7d):    ${formatUSD(token.bridgeVolume7d)}
 Search Intent Score:    ${token.mds.breakdown.searchIntent.normalized}/100
-Social Demand Mentions: ${token.socialData.demandMentions}
+Community Score:         ${token.socialData.communityScore}/100
 Wallet Overlap:         ${token.walletOverlap.overlapPercentage}% (${formatNumber(token.walletOverlap.solanaWallets)} wallets)
-Sentiment:              ${(token.socialData.sentiment * 100).toFixed(0)}% positive
+Sentiment:              ${token.socialData.sentimentUpPct.toFixed(0)}% positive
 
 BRIDGE RECOMMENDATION
 ${"-".repeat(30)}

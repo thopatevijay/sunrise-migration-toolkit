@@ -182,8 +182,7 @@ export async function fetchMarketData(
 
 export async function fetchSocialData(
   tokenId: string,
-  coingeckoId: string,
-  symbol: string
+  coingeckoId: string
 ): Promise<TokenSocialData | null> {
   const cacheKey = `cg:social:${tokenId}`;
   const cached = cache.get<TokenSocialData>(cacheKey);
@@ -200,40 +199,37 @@ export async function fetchSocialData(
 
     const coin = result.data;
     const community = coin.community_data;
-    const sentimentUp = coin.sentiment_votes_up_percentage ?? 50;
+    const sentimentUpPct = coin.sentiment_votes_up_percentage ?? 50;
 
     const twitterFollowers = community?.twitter_followers ?? 0;
-    const redditSubs = community?.reddit_subscribers ?? 0;
-    const redditActive = community?.reddit_accounts_active_48h ?? 0;
+    const redditSubscribers = community?.reddit_subscribers ?? 0;
+    const redditActive48h = community?.reddit_accounts_active_48h ?? 0;
 
-    // Derive social signals from CoinGecko community data
-    const sentiment = Math.round(((sentimentUp / 100) * 2 - 1) * 100) / 100; // normalized -1..1
-    const baseTweets = Math.round(twitterFollowers * 0.002 * Math.max(0.5, (sentimentUp / 50)));
-    const tweets7d = Math.max(baseTweets, 10);
-    const tweets30d = Math.round(tweets7d * 3.8);
-    const demandMentions = Math.round(tweets7d * 0.15 * Math.max(0.5, sentimentUp / 50));
-    const influencerMentions = Math.round(
-      Math.min(30, (redditActive / 100) + (twitterFollowers / 50000) * 5)
+    // Normalized sentiment: -1 to 1
+    const sentiment = Math.round(((sentimentUpPct / 100) * 2 - 1) * 100) / 100;
+
+    // Community score: composite of real metrics (0-100)
+    const twitterScore = Math.min(100, (twitterFollowers / 500_000) * 100);
+    const redditSubScore = Math.min(100, (redditSubscribers / 100_000) * 100);
+    const redditActiveScore = Math.min(100, (redditActive48h / 5_000) * 100);
+    const sentimentScore = sentimentUpPct;
+    const communityScore = Math.round(
+      twitterScore * 0.4 + redditSubScore * 0.2 + redditActiveScore * 0.2 + sentimentScore * 0.2
     );
 
-    // Trend from reddit activity + sentiment as proxy
-    const trend = Math.round(
-      (sentiment * 20) + (redditSubs > 0 ? Math.min(15, redditActive / redditSubs * 100) : 0)
-    );
+    // Trend: reddit engagement ratio as activity proxy
+    const trend = redditSubscribers > 0
+      ? Math.round((redditActive48h / redditSubscribers) * 100 * 10) / 10
+      : 0;
 
     const social: TokenSocialData = {
       tokenId,
-      tweets7d,
-      tweets30d,
+      twitterFollowers,
+      redditSubscribers,
+      redditActive48h,
+      sentimentUpPct,
       sentiment,
-      topHashtags: [
-        `#${symbol.toUpperCase()}`,
-        `#${symbol.toUpperCase()}onSolana`,
-        "#SolanaGraveyard",
-        "#Sunrise",
-      ],
-      demandMentions,
-      influencerMentions,
+      communityScore,
       trend,
     };
 

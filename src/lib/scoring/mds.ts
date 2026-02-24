@@ -80,7 +80,7 @@ export function calculateMDS(
       ? buildSignalScore(search.avgDaily, searchNorm, MDS_WEIGHTS.searchIntent, search.trend)
       : EMPTY_SIGNAL,
     socialDemand: social
-      ? buildSignalScore(social.demandMentions, socialNorm, MDS_WEIGHTS.socialDemand, social.trend)
+      ? buildSignalScore(social.communityScore, socialNorm, MDS_WEIGHTS.socialDemand, social.trend)
       : EMPTY_SIGNAL,
     chainHealth: market
       ? buildSignalScore(market.marketCap, healthNorm, MDS_WEIGHTS.chainHealth, market.change30d)

@@ -63,7 +63,7 @@ export async function POST(request: Request) {
     const [marketResult, searchResult, socialResult] = await Promise.allSettled([
       fetchMarketData(tokenId, coingeckoId),
       fetchSearchIntent(tokenId, symbol, 50),
-      fetchSocialData(tokenId, coingeckoId, symbol),
+      fetchSocialData(tokenId, coingeckoId),
     ]);
 
     let market = marketResult.status === "fulfilled" ? marketResult.value : null;

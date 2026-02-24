@@ -29,7 +29,7 @@ export default function ProposalsPage() {
   };
 
   const handleCopy = async (proposal: MigrationProposal) => {
-    const text = `Migration Proposal: ${proposal.tokenSymbol}\nMDS: ${proposal.mdsScore}\n\n${proposal.whyThisToken}\n\nStrategy: ${proposal.proposedStrategy}\n\nMarket Cap: ${formatUSD(proposal.marketCap)}\nBridge Volume (7d): ${formatUSD(proposal.bridgeVolume7d)}\nDemand Mentions: ${proposal.demandMentions}\nWallet Overlap: ${proposal.walletOverlap}%`;
+    const text = `Migration Proposal: ${proposal.tokenSymbol}\nMDS: ${proposal.mdsScore}\n\n${proposal.whyThisToken}\n\nStrategy: ${proposal.proposedStrategy}\n\nMarket Cap: ${formatUSD(proposal.marketCap)}\nBridge Volume (7d): ${formatUSD(proposal.bridgeVolume7d)}\nCommunity Score: ${proposal.communityScore}/100\nWallet Overlap: ${proposal.walletOverlap}%`;
     await navigator.clipboard.writeText(text);
     setCopiedId(proposal.id);
     setTimeout(() => setCopiedId(null), 2000);

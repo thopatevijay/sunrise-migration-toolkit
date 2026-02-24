@@ -32,12 +32,12 @@ export interface TokenSearchData {
 
 export interface TokenSocialData {
   tokenId: string;
-  tweets7d: number;
-  tweets30d: number;
-  sentiment: number; // -1 to 1
-  topHashtags: string[];
-  demandMentions: number; // tweets specifically requesting Solana listing
-  influencerMentions: number;
+  twitterFollowers: number;
+  redditSubscribers: number;
+  redditActive48h: number;
+  sentimentUpPct: number; // 0-100 raw from CoinGecko
+  sentiment: number; // -1 to 1 normalized
+  communityScore: number; // composite 0-100
   trend: number;
 }
 
