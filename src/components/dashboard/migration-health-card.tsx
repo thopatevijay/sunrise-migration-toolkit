@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScoreRing } from "@/components/shared/score-ring";
@@ -31,10 +32,13 @@ export function MigrationHealthCard({ health }: MigrationHealthCardProps) {
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
             {token.logo ? (
-              <img
+              <Image
                 src={token.logo}
                 alt={token.symbol}
+                width={40}
+                height={40}
                 className="h-10 w-10 rounded-full"
+                unoptimized
               />
             ) : (
               <div className="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center text-xs font-bold">

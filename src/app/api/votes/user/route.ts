@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { redis } from "@/lib/redis";
 
+export const dynamic = "force-dynamic";
+
 // GET /api/votes/user?userId=xxx — return set of coingeckoIds the user has voted for
 export async function GET(request: Request) {
   if (!redis) {

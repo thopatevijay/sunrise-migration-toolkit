@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback, useEffect } from "react";
+import Image from "next/image";
 import {
   Table,
   TableBody,
@@ -372,11 +373,13 @@ export function DiscoveryTable({ tokens, isLoading }: DiscoveryTableProps) {
                   <TableCell>
                     <div className="flex items-center gap-2.5">
                       {token.logo ? (
-                        <img
+                        <Image
                           src={token.logo}
                           alt={token.symbol}
+                          width={28}
+                          height={28}
                           className="h-7 w-7 rounded-full"
-                          loading="lazy"
+                          unoptimized
                         />
                       ) : (
                         <div className="h-7 w-7 rounded-full bg-white/10 flex items-center justify-center text-[10px] font-bold">

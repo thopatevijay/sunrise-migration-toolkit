@@ -14,6 +14,11 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.VERCEL_PROJECT_PRODUCTION_URL
+      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+      : "https://tideshift.vercel.app"
+  ),
   title: "Tideshift — Demand-Driven Token Migration for Solana",
   description:
     "Full-lifecycle infrastructure for token migrations to Solana. Discover demand, score candidates, and onboard communities — powered by Sunrise.",
