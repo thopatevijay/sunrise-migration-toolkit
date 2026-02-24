@@ -276,7 +276,7 @@ export function DataSourcesSection() {
           </div>
           <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 px-4 py-2">
             <span className="font-mono text-sm font-bold text-yellow-400">
-              1\u20132 failures
+              1&ndash;2 failures
             </span>
             <span className="ml-2 text-sm text-yellow-400">
               Degraded

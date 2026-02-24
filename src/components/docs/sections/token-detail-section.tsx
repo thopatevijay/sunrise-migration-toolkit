@@ -119,16 +119,16 @@ export function TokenDetailSection() {
           displaying the token&apos;s overall Migration Demand Score from 0 to
           100. The ring color shifts dynamically based on score range:{" "}
           <span className="font-mono text-xs bg-red-500/10 text-red-400 px-1.5 py-0.5 rounded">
-            0\u201329 red
+            0&ndash;29 red
           </span>{" "}
           <span className="font-mono text-xs bg-yellow-500/10 text-yellow-400 px-1.5 py-0.5 rounded">
-            30\u201359 yellow
+            30&ndash;59 yellow
           </span>{" "}
           <span className="font-mono text-xs bg-emerald-500/10 text-emerald-400 px-1.5 py-0.5 rounded">
-            60\u201379 green
+            60&ndash;79 green
           </span>{" "}
           <span className="font-mono text-xs bg-cyan-500/10 text-cyan-400 px-1.5 py-0.5 rounded">
-            80\u2013100 cyan
+            80&ndash;100 cyan
           </span>
           . This is the single most important indicator of migration demand.
         </p>
@@ -151,9 +151,9 @@ export function TokenDetailSection() {
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed">
                 5-axis spider chart showing each signal&apos;s normalized score
-                (0\u2013100). Quickly reveals a token&apos;s demand profile
-                shape — whether it&apos;s bridge-heavy, socially driven, or
-                balanced.
+                (0&ndash;100). Quickly reveals a token&apos;s demand profile
+                shape &mdash; whether it&apos;s bridge-heavy, socially driven,
+                or balanced.
               </p>
             </CardContent>
           </Card>
