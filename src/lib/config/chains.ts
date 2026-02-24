@@ -9,7 +9,6 @@ export interface ChainConfig {
   nativeCurrency: string;
   bridgeSupport: {
     wormhole: boolean;
-    debridge: boolean;
   };
 }
 
@@ -21,7 +20,7 @@ export const CHAINS: Record<ChainId, ChainConfig> = {
     color: "#627EEA",
     explorerUrl: "https://etherscan.io",
     nativeCurrency: "ETH",
-    bridgeSupport: { wormhole: true, debridge: true },
+    bridgeSupport: { wormhole: true },
   },
   arbitrum: {
     id: "arbitrum",
@@ -30,7 +29,7 @@ export const CHAINS: Record<ChainId, ChainConfig> = {
     color: "#28A0F0",
     explorerUrl: "https://arbiscan.io",
     nativeCurrency: "ETH",
-    bridgeSupport: { wormhole: true, debridge: true },
+    bridgeSupport: { wormhole: true },
   },
   optimism: {
     id: "optimism",
@@ -39,7 +38,7 @@ export const CHAINS: Record<ChainId, ChainConfig> = {
     color: "#FF0420",
     explorerUrl: "https://optimistic.etherscan.io",
     nativeCurrency: "ETH",
-    bridgeSupport: { wormhole: true, debridge: true },
+    bridgeSupport: { wormhole: true },
   },
   base: {
     id: "base",
@@ -48,7 +47,7 @@ export const CHAINS: Record<ChainId, ChainConfig> = {
     color: "#0052FF",
     explorerUrl: "https://basescan.org",
     nativeCurrency: "ETH",
-    bridgeSupport: { wormhole: true, debridge: true },
+    bridgeSupport: { wormhole: true },
   },
   polygon: {
     id: "polygon",
@@ -57,7 +56,7 @@ export const CHAINS: Record<ChainId, ChainConfig> = {
     color: "#8247E5",
     explorerUrl: "https://polygonscan.com",
     nativeCurrency: "MATIC",
-    bridgeSupport: { wormhole: true, debridge: true },
+    bridgeSupport: { wormhole: true },
   },
   avalanche: {
     id: "avalanche",
@@ -66,7 +65,7 @@ export const CHAINS: Record<ChainId, ChainConfig> = {
     color: "#E84142",
     explorerUrl: "https://snowtrace.io",
     nativeCurrency: "AVAX",
-    bridgeSupport: { wormhole: true, debridge: true },
+    bridgeSupport: { wormhole: true },
   },
   bsc: {
     id: "bsc",
@@ -75,7 +74,7 @@ export const CHAINS: Record<ChainId, ChainConfig> = {
     color: "#F0B90B",
     explorerUrl: "https://bscscan.com",
     nativeCurrency: "BNB",
-    bridgeSupport: { wormhole: true, debridge: true },
+    bridgeSupport: { wormhole: true },
   },
   hyperliquid: {
     id: "hyperliquid",
@@ -84,7 +83,7 @@ export const CHAINS: Record<ChainId, ChainConfig> = {
     color: "#50E3C2",
     explorerUrl: "https://explorer.hyperliquid.xyz",
     nativeCurrency: "HYPE",
-    bridgeSupport: { wormhole: false, debridge: false },
+    bridgeSupport: { wormhole: false },
   },
   monad: {
     id: "monad",
@@ -93,7 +92,7 @@ export const CHAINS: Record<ChainId, ChainConfig> = {
     color: "#836EF9",
     explorerUrl: "https://explorer.monad.xyz",
     nativeCurrency: "MON",
-    bridgeSupport: { wormhole: false, debridge: false },
+    bridgeSupport: { wormhole: false },
   },
   helium: {
     id: "helium",
@@ -102,7 +101,7 @@ export const CHAINS: Record<ChainId, ChainConfig> = {
     color: "#474DFF",
     explorerUrl: "https://explorer.helium.com",
     nativeCurrency: "HNT",
-    bridgeSupport: { wormhole: false, debridge: false },
+    bridgeSupport: { wormhole: false },
   },
   sui: {
     id: "sui",
@@ -111,7 +110,7 @@ export const CHAINS: Record<ChainId, ChainConfig> = {
     color: "#4DA2FF",
     explorerUrl: "https://suiscan.xyz",
     nativeCurrency: "SUI",
-    bridgeSupport: { wormhole: true, debridge: false },
+    bridgeSupport: { wormhole: true },
   },
   near: {
     id: "near",
@@ -120,7 +119,7 @@ export const CHAINS: Record<ChainId, ChainConfig> = {
     color: "#00C08B",
     explorerUrl: "https://nearblocks.io",
     nativeCurrency: "NEAR",
-    bridgeSupport: { wormhole: true, debridge: false },
+    bridgeSupport: { wormhole: true },
   },
   tron: {
     id: "tron",
@@ -129,7 +128,7 @@ export const CHAINS: Record<ChainId, ChainConfig> = {
     color: "#FF0013",
     explorerUrl: "https://tronscan.org",
     nativeCurrency: "TRX",
-    bridgeSupport: { wormhole: false, debridge: false },
+    bridgeSupport: { wormhole: false },
   },
   fantom: {
     id: "fantom",
@@ -138,7 +137,7 @@ export const CHAINS: Record<ChainId, ChainConfig> = {
     color: "#1969FF",
     explorerUrl: "https://ftmscan.com",
     nativeCurrency: "FTM",
-    bridgeSupport: { wormhole: true, debridge: false },
+    bridgeSupport: { wormhole: true },
   },
   aptos: {
     id: "aptos",
@@ -147,7 +146,7 @@ export const CHAINS: Record<ChainId, ChainConfig> = {
     color: "#4FD1C5",
     explorerUrl: "https://aptoscan.com",
     nativeCurrency: "APT",
-    bridgeSupport: { wormhole: true, debridge: false },
+    bridgeSupport: { wormhole: true },
   },
   other: {
     id: "other",
@@ -156,6 +155,6 @@ export const CHAINS: Record<ChainId, ChainConfig> = {
     color: "#9CA3AF",
     explorerUrl: "",
     nativeCurrency: "",
-    bridgeSupport: { wormhole: false, debridge: false },
+    bridgeSupport: { wormhole: false },
   },
 };

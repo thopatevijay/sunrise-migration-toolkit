@@ -8,7 +8,6 @@ export type ProviderName =
   | "wormholescan"
   | "defillama"
   | "jupiter"
-  | "debridge"
   | "dexscreener"
   | "helius";
 
@@ -32,7 +31,6 @@ const DISPLAY_NAMES: Record<ProviderName, string> = {
   wormholescan: "WormholeScan",
   defillama: "DefiLlama",
   jupiter: "Jupiter",
-  debridge: "deBridge",
   dexscreener: "DexScreener",
   helius: "Helius",
 };
@@ -105,7 +103,7 @@ export function getHealthSnapshot(): ProviderHealth[] {
     "wormholescan",
     "defillama",
     "jupiter",
-    "debridge",
+    "dexscreener",
   ];
 
   return providers.map((name) => {

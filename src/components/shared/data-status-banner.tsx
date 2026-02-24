@@ -3,11 +3,11 @@
 import { useState } from "react";
 import { X, Radio } from "lucide-react";
 
-interface DemoBannerProps {
+interface DataStatusBannerProps {
   dataSource?: "live" | "partial";
 }
 
-export function DemoBanner({ dataSource = "partial" }: DemoBannerProps) {
+export function DataStatusBanner({ dataSource = "partial" }: DataStatusBannerProps) {
   const [dismissed, setDismissed] = useState(false);
 
   // Hide banner when all signals are live or dismissed

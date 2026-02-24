@@ -8,8 +8,6 @@ export { fetchProtocolTvl, fetchChainBridgeVolume, fetchSolanaChainTvl, fetchPro
 export { fetchMarketData, fetchBatchMarketData, fetchSocialData, fetchCoinGeckoPlatforms } from "./coingecko";
 export { checkJupiterListing, fetchJupiterPrice } from "./jupiter";
 export { fetchDexScreenerActivity } from "./dexscreener";
-export { fetchDebridgeChains, fetchRecentOrders } from "./debridge";
-export type { DebridgeOrder } from "./debridge";
 export { estimateWalletOverlap } from "./wallet-heuristic";
 export { fetchTokenHolderCount } from "./helius";
 export type { HolderCountResult } from "./helius";

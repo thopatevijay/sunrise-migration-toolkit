@@ -52,7 +52,6 @@ export interface MigrationAnalysis {
 function getBridgeRecommendation(chainId: ChainId): BridgeRecommendation {
   const chain = CHAINS[chainId];
   const hasWormhole = chain?.bridgeSupport?.wormhole ?? false;
-  const hasDebridge = chain?.bridgeSupport?.debridge ?? false;
 
   if (hasWormhole) {
     return {
@@ -64,15 +63,6 @@ function getBridgeRecommendation(chainId: ChainId): BridgeRecommendation {
           pros: "Battle-tested oracle network, broad chain support",
           cons: "Higher fees, slower finality than NTT",
         },
-        ...(hasDebridge
-          ? [
-              {
-                framework: "deBridge DLN",
-                pros: "Fast settlement, competitive fees",
-                cons: "Smaller liquidity network, less adoption for canonical assets",
-              },
-            ]
-          : []),
       ],
     };
   }

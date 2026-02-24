@@ -3,7 +3,7 @@
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { AppHeader } from "@/components/app-header";
-import { DemoBanner } from "@/components/shared/demo-banner";
+import { DataStatusBanner } from "@/components/shared/data-status-banner";
 import { useTokens } from "@/hooks/use-tokens";
 
 export default function DashboardLayout({
@@ -22,7 +22,7 @@ export default function DashboardLayout({
           dataSource={stats?.dataSource}
         />
         <main className="flex-1 overflow-auto p-6">{children}</main>
-        <DemoBanner dataSource={stats?.dataSource} />
+        <DataStatusBanner dataSource={stats?.dataSource} />
       </SidebarInset>
     </SidebarProvider>
   );
