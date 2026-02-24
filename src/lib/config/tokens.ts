@@ -22,7 +22,13 @@ export type ChainId =
   | "avalanche"
   | "bsc"
   | "hyperliquid"
-  | "monad";
+  | "monad"
+  | "sui"
+  | "near"
+  | "tron"
+  | "fantom"
+  | "aptos"
+  | "other";
 
 export type TokenCategory =
   | "defi"
@@ -51,7 +57,27 @@ export interface MigratedToken extends TokenCandidate {
 // Curated list of tokens we track for migration demand.
 // All data (prices, volumes, scores) comes from live APIs.
 
-export const TOKEN_CANDIDATES: TokenCandidate[] = [
+// Map Discovery display names → ChainId for dynamic token conversion
+export const DISCOVERY_CHAIN_MAP: Record<string, ChainId> = {
+  Ethereum: "ethereum",
+  Arbitrum: "arbitrum",
+  Optimism: "optimism",
+  Base: "base",
+  Polygon: "polygon",
+  Avalanche: "avalanche",
+  BSC: "bsc",
+  Fantom: "fantom",
+  NEAR: "near",
+  Sui: "sui",
+  Aptos: "aptos",
+  Mantle: "other",
+  Linea: "other",
+  Scroll: "other",
+  Blast: "other",
+  zkSync: "other",
+};
+
+export const STATIC_TOKEN_CANDIDATES: TokenCandidate[] = [
   {
     id: "ondo",
     symbol: "ONDO",
