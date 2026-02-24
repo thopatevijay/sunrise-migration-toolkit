@@ -37,6 +37,8 @@ const navItems = [
 const onboardingItems = [
   { title: "HYPE Onboarding", href: "/onboard/hype" },
   { title: "MON Onboarding", href: "/onboard/mon" },
+  { title: "LIT Onboarding", href: "/onboard/lit" },
+  { title: "INX Onboarding", href: "/onboard/inx" },
 ];
 
 export function AppSidebar() {
