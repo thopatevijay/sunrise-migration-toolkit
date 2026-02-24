@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -9,7 +10,6 @@ import {
   FileText,
   Globe,
   Users,
-  Waves,
 } from "lucide-react";
 import {
   Sidebar,
@@ -49,9 +49,13 @@ export function AppSidebar() {
     <Sidebar variant="inset" collapsible="icon">
       <SidebarHeader className="p-4">
         <Link href="/" className="flex items-center gap-2.5 group">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-purple-500 to-cyan-500">
-            <Waves className="h-4.5 w-4.5 text-white" />
-          </div>
+          <Image
+            src="/logo.png"
+            alt="Tideshift"
+            width={32}
+            height={32}
+            className="h-8 w-8 rounded-lg"
+          />
           <span className="text-lg font-bold tracking-tight gradient-text group-data-[collapsible=icon]:hidden">
             Tideshift
           </span>
