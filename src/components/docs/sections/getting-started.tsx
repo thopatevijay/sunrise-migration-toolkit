@@ -11,6 +11,7 @@ import {
   HeartHandshake,
   LineChart,
 } from "lucide-react";
+import Link from "next/link";
 import { DocsSection } from "@/components/docs/docs-section";
 import { DocsCallout } from "@/components/docs/docs-callout";
 import { Card, CardContent } from "@/components/ui/card";
@@ -144,10 +145,13 @@ export function GettingStarted() {
                 <p className="text-xs text-muted-foreground leading-relaxed mb-3">
                   {f.description}
                 </p>
-                <span className="inline-flex items-center gap-1 text-xs text-primary font-medium">
+                <Link
+                  href={f.link}
+                  className="inline-flex items-center gap-1 text-xs text-primary font-medium hover:underline"
+                >
                   {f.linkText}
                   <ArrowRight className="h-3 w-3" />
-                </span>
+                </Link>
               </CardContent>
             </Card>
           ))}
