@@ -4,13 +4,14 @@ const YIELDS_URL = "https://yields.llama.fi/pools";
 
 // Map our protocol display names to DefiLlama project slugs
 const PROTOCOL_SLUGS: Record<string, string[]> = {
-  "Kamino Finance": ["kamino"],
-  "MarginFi": ["marginfi"],
-  "Raydium": ["raydium"],
-  "Orca": ["orca"],
-  "Drift Protocol": ["drift-protocol"],
-  "Sanctum": ["sanctum"],
-  "Jupiter": ["jupiter"],
+  "Kamino Finance": ["kamino-lend", "kamino-liquidity"],
+  "MarginFi": ["save", "marginfi-lst"],
+  "Raydium": ["raydium-amm"],
+  "Orca": ["orca-dex"],
+  "Drift Protocol": ["drift-staked-sol"],
+  "Sanctum": ["sanctum-infinity"],
+  "Jupiter": ["jupiter-staked-sol"],
+  "Loopscale": ["loopscale"],
 };
 
 export interface YieldPool {
