@@ -5,6 +5,7 @@ import {
   fetchBridgeData,
   fetchSearchIntent,
   fetchProtocolTvl,
+  fetchProtocolSolanaTvlRatio,
   estimateWalletOverlap,
 } from "@/lib/data/providers";
 import { calculateMDS } from "@/lib/scoring/mds";
@@ -80,7 +81,8 @@ export async function POST(request: Request) {
 
     const search = searchResult.status === "fulfilled" ? searchResult.value : null;
     const social = socialResult.status === "fulfilled" ? socialResult.value : null;
-    const wallet = estimateWalletOverlap(tokenId, chainId, category, market, bridge);
+    const protocolTvl = await fetchProtocolSolanaTvlRatio(coingeckoId, name).catch(() => null);
+    const wallet = await estimateWalletOverlap(tokenId, chainId, category, market, bridge, protocolTvl);
 
     // Calculate MDS
     const mds = calculateMDS(tokenId, { bridge, search, social, market, wallet });

@@ -125,6 +125,55 @@ export async function fetchSolanaChainTvl(): Promise<number | null> {
   }
 }
 
+export async function fetchProtocolSolanaTvlRatio(
+  coingeckoId: string,
+  name: string
+): Promise<{ solanaTvl: number; totalTvl: number } | null> {
+  const cacheKey = `dl:sol-ratio:${coingeckoId}`;
+  const cached = cache.get<{ solanaTvl: number; totalTvl: number }>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const protocols = await getAllProtocols();
+    if (!protocols) return null;
+
+    const match =
+      protocols.find((p) => p.gecko_id === coingeckoId) ??
+      protocols.find(
+        (p) =>
+          p.name.toLowerCase() === name.toLowerCase() ||
+          p.slug?.toLowerCase() === name.toLowerCase()
+      );
+
+    if (!match || !match.tvl || match.tvl <= 0) return null;
+
+    // Check if protocol has Solana chain presence
+    const hasSolana = match.chains?.some(
+      (c) => c.toLowerCase() === "solana"
+    );
+
+    if (!hasSolana) return null;
+
+    // Fetch detailed protocol data for chain-specific TVL
+    const detailRes = await trackedFetch<{
+      chainTvls?: Record<string, { tvl?: { date: number; totalLiquidityUSD: number }[] }>;
+    }>("defillama", `https://api.llama.fi/protocol/${match.slug}`);
+
+    if (!detailRes.data?.chainTvls) return null;
+
+    const solanaTvlData = detailRes.data.chainTvls["Solana"]?.tvl;
+    if (!solanaTvlData || solanaTvlData.length === 0) return null;
+
+    const solanaTvl = solanaTvlData[solanaTvlData.length - 1]?.totalLiquidityUSD ?? 0;
+    const result = { solanaTvl, totalTvl: match.tvl };
+
+    cache.set(cacheKey, result, TTL.PROTOCOLS);
+    return result;
+  } catch {
+    return null;
+  }
+}
+
 // --- Internal ---
 
 async function getAllProtocols(): Promise<DefiLlamaProtocol[] | null> {

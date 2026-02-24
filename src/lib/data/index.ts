@@ -5,6 +5,7 @@ import {
   fetchBridgeData,
   fetchSearchIntent,
   fetchProtocolTvl,
+  fetchProtocolSolanaTvlRatio,
   estimateWalletOverlap,
 } from "./providers";
 import { discoverMigrationCandidates, getAlreadyMigratedTokens } from "./token-discovery";
@@ -116,13 +117,19 @@ async function fetchSignals(
   const social = socialResult.status === "fulfilled" ? socialResult.value : null;
   if (social) signalCount++;
 
-  // Wallet overlap — heuristic from other signals
-  const wallet = estimateWalletOverlap(
+  // Wallet overlap — heuristic enhanced with real TVL data
+  const protocolTvl = await fetchProtocolSolanaTvlRatio(
+    token.coingeckoId,
+    token.name
+  ).catch(() => null);
+
+  const wallet = await estimateWalletOverlap(
     token.id,
     token.originChain,
     token.category,
     market,
-    bridge
+    bridge,
+    protocolTvl
   );
   if (wallet) signalCount++;
 

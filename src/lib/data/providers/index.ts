@@ -4,7 +4,7 @@ export { getHealthSnapshot, trackedFetch } from "./health";
 export type { ProviderHealth, ProviderName } from "./health";
 export { fetchBridgeData, fetchScorecards } from "./wormhole";
 export type { WormholeScorecards } from "./wormhole";
-export { fetchProtocolTvl, fetchChainBridgeVolume, fetchSolanaChainTvl } from "./defillama";
+export { fetchProtocolTvl, fetchChainBridgeVolume, fetchSolanaChainTvl, fetchProtocolSolanaTvlRatio } from "./defillama";
 export { fetchMarketData, fetchBatchMarketData, fetchSocialData, fetchCoinGeckoPlatforms } from "./coingecko";
 export { fetchSearchIntent, fetchJupiterPrice } from "./jupiter";
 export { fetchDebridgeChains, fetchRecentOrders } from "./debridge";

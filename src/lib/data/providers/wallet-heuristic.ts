@@ -13,6 +13,7 @@ const CHAIN_PROXIMITY: Record<string, number> = {
   bsc: 6,
   hyperliquid: 12,
   monad: 10,
+  helium: 20,
 };
 
 // Category affinity: how likely this token category's users are to be on Solana
@@ -26,13 +27,14 @@ const CATEGORY_AFFINITY: Record<string, number> = {
   ai: 6,
 };
 
-export function estimateWalletOverlap(
+export async function estimateWalletOverlap(
   tokenId: string,
   originChain: ChainId,
   category: TokenCategory,
   marketData: TokenMarketData | null,
-  bridgeData: TokenBridgeData | null
-): TokenWalletOverlap | null {
+  bridgeData: TokenBridgeData | null,
+  protocolTvl?: { solanaTvl: number; totalTvl: number } | null
+): Promise<TokenWalletOverlap | null> {
   const cacheKey = `wallet:${tokenId}`;
   const cached = cache.get<TokenWalletOverlap>(cacheKey);
   if (cached) return cached;
@@ -58,10 +60,17 @@ export function estimateWalletOverlap(
     : mcap > 100_000_000 ? 2
     : 1;
 
+  // Live TVL ratio bonus: if protocol has Solana TVL, use real data
+  let tvlBonus = 0;
+  if (protocolTvl && protocolTvl.totalTvl > 0 && protocolTvl.solanaTvl > 0) {
+    const solanaShare = (protocolTvl.solanaTvl / protocolTvl.totalTvl) * 100;
+    tvlBonus = Math.min(15, Math.round(solanaShare));
+  }
+
   // Compute overlap percentage (capped at 50%)
   const overlapPercentage = Math.min(
     50,
-    Math.round((bridgeRatio * 100 + chainScore + categoryScore + tierBonus) * 10) / 10
+    Math.round((bridgeRatio * 100 + chainScore + categoryScore + tierBonus + tvlBonus) * 10) / 10
   );
 
   const totalHolders = marketData.holders;
@@ -83,6 +92,7 @@ export function estimateWalletOverlap(
     totalHolders,
     activeOverlap,
     topWalletCategories,
+    isEstimated: true,
   };
 
   cache.set(cacheKey, result, TTL.WALLET_DATA);
