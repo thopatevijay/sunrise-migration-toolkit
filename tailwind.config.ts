@@ -2,6 +2,18 @@ import type { Config } from "tailwindcss";
 
 const config: Config = {
   darkMode: ["class"],
+  safelist: [
+    // Dynamic gradient classes used in onboarding configs (lib/config/onboarding.ts)
+    "from-rose-500", "to-orange-500",
+    "from-rose-950/30", "via-background", "to-orange-950/20",
+    "from-indigo-500", "to-blue-500",
+    "from-indigo-950/30", "to-blue-950/20",
+    "from-emerald-500", "to-teal-500",
+    "from-emerald-950/30", "to-teal-950/20",
+    "from-sky-500", "to-cyan-500",
+    "from-sky-950/30", "to-cyan-950/20",
+    "bg-rose-500/10", "bg-indigo-500/10", "bg-emerald-500/10", "bg-sky-500/10",
+  ],
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
