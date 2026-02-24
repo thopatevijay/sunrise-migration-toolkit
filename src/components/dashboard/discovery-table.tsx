@@ -21,8 +21,11 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronUp,
+  Loader2,
+  Zap,
 } from "lucide-react";
 import { TrendIndicator } from "@/components/shared/trend-indicator";
+import { MdsBadge } from "@/components/shared/mds-badge";
 import { formatUSD } from "@/lib/utils";
 import type { DiscoveryToken } from "@/lib/types/discovery";
 import {
@@ -31,7 +34,7 @@ import {
   toggleVote,
 } from "@/lib/data/demand-votes";
 
-type SortKey = "rank" | "marketCap" | "volume24h" | "change7d" | "demand";
+type SortKey = "rank" | "marketCap" | "volume24h" | "change7d" | "demand" | "mds";
 type PageSize = 25 | 50 | 100 | 200 | "all";
 
 const PAGE_SIZES: { label: string; value: PageSize }[] = [
@@ -104,6 +107,46 @@ export function DiscoveryTable({ tokens, isLoading }: DiscoveryTableProps) {
     });
   }, []);
 
+  // On-demand MDS scoring state
+  const [scores, setScores] = useState<Record<string, number>>({});
+  const [scoringIds, setScoringIds] = useState<Set<string>>(new Set());
+
+  const handleScore = useCallback(async (e: React.MouseEvent, token: DiscoveryToken) => {
+    e.stopPropagation();
+    if (scoringIds.has(token.coingeckoId) || scores[token.coingeckoId] !== undefined) return;
+
+    setScoringIds((prev) => {
+      const next = new Set(prev);
+      next.add(token.coingeckoId);
+      return next;
+    });
+
+    try {
+      const res = await fetch("/api/tokens/score", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          coingeckoId: token.coingeckoId,
+          symbol: token.symbol,
+          name: token.name,
+          originChain: token.originChains[0],
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setScores((prev) => ({ ...prev, [token.coingeckoId]: data.mds.totalScore }));
+      }
+    } catch {
+      // silently fail — button stays available for retry
+    } finally {
+      setScoringIds((prev) => {
+        const next = new Set(prev);
+        next.delete(token.coingeckoId);
+        return next;
+      });
+    }
+  }, [scoringIds, scores]);
+
   const filtered = useMemo(() => {
     let result = [...tokens];
 
@@ -123,6 +166,11 @@ export function DiscoveryTable({ tokens, isLoading }: DiscoveryTableProps) {
         const bVal = voteCounts[b.coingeckoId] ?? 0;
         return sortAsc ? aVal - bVal : bVal - aVal;
       }
+      if (sortKey === "mds") {
+        const aVal = scores[a.coingeckoId] ?? -1;
+        const bVal = scores[b.coingeckoId] ?? -1;
+        return sortAsc ? aVal - bVal : bVal - aVal;
+      }
       const aVal = a[sortKey];
       const bVal = b[sortKey];
       return sortAsc
@@ -131,7 +179,7 @@ export function DiscoveryTable({ tokens, isLoading }: DiscoveryTableProps) {
     });
 
     return result;
-  }, [tokens, search, sortKey, sortAsc, voteCounts]);
+  }, [tokens, search, sortKey, sortAsc, voteCounts, scores]);
 
   // Pagination
   const effectivePageSize = pageSize === "all" ? filtered.length : pageSize;
@@ -260,6 +308,9 @@ export function DiscoveryTable({ tokens, isLoading }: DiscoveryTableProps) {
                 <TableHead className="text-xs">
                   <SortableHeader label="Demand" sortKeyName="demand" />
                 </TableHead>
+                <TableHead className="text-xs">
+                  <SortableHeader label="MDS" sortKeyName="mds" />
+                </TableHead>
                 <TableHead className="text-xs hidden lg:table-cell">
                   Chains
                 </TableHead>
@@ -328,6 +379,24 @@ export function DiscoveryTable({ tokens, isLoading }: DiscoveryTableProps) {
                       <ChevronUp className={`h-3.5 w-3.5 ${userVotes.has(token.coingeckoId) ? "text-purple-400" : ""}`} />
                       <span className="font-mono">{voteCounts[token.coingeckoId] ?? 0}</span>
                     </button>
+                  </TableCell>
+                  <TableCell>
+                    {scores[token.coingeckoId] !== undefined ? (
+                      <MdsBadge score={scores[token.coingeckoId]} size="sm" />
+                    ) : (
+                      <button
+                        onClick={(e) => handleScore(e, token)}
+                        disabled={scoringIds.has(token.coingeckoId)}
+                        className="flex items-center gap-1 px-2 py-1 rounded-md text-xs bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-foreground border border-white/10 transition-colors disabled:opacity-50"
+                      >
+                        {scoringIds.has(token.coingeckoId) ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <Zap className="h-3 w-3" />
+                        )}
+                        <span>{scoringIds.has(token.coingeckoId) ? "Scoring..." : "Score"}</span>
+                      </button>
+                    )}
                   </TableCell>
                   <TableCell className="hidden lg:table-cell">
                     <div className="flex flex-wrap gap-1">
