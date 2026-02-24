@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   Activity,
   BarChart3,
+  BookOpen,
   Coins,
   FileText,
   Globe,
@@ -32,6 +33,7 @@ const navItems = [
   { title: "Discovery", href: "/discovery", icon: Globe },
   { title: "Proposals", href: "/proposals", icon: FileText },
   { title: "Migrations", href: "/migrations", icon: Activity },
+  { title: "Docs", href: "/docs", icon: BookOpen },
 ];
 
 const onboardingItems = [
