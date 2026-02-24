@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import {
   Table,
   TableBody,
@@ -29,9 +29,10 @@ import { MdsBadge } from "@/components/shared/mds-badge";
 import { formatUSD } from "@/lib/utils";
 import type { DiscoveryToken } from "@/lib/types/discovery";
 import {
-  getAllVoteCounts,
-  hasUserVoted,
-  toggleVote,
+  getUserId,
+  fetchVoteCounts,
+  fetchUserVotes,
+  toggleVoteApi,
 } from "@/lib/data/demand-votes";
 
 type SortKey = "rank" | "marketCap" | "volume24h" | "change7d" | "demand" | "mds";
@@ -85,27 +86,59 @@ export function DiscoveryTable({ tokens, isLoading }: DiscoveryTableProps) {
   const [pageSize, setPageSize] = useState<PageSize>(50);
   const [page, setPage] = useState(1);
 
-  // Demand vote state
-  const [voteCounts, setVoteCounts] = useState<Record<string, number>>(getAllVoteCounts);
-  const [userVotes, setUserVotes] = useState<Set<string>>(() => {
-    const votes = new Set<string>();
-    tokens.forEach((t) => {
-      if (hasUserVoted(t.coingeckoId)) votes.add(t.coingeckoId);
-    });
-    return votes;
-  });
+  // Demand vote state — backed by Upstash Redis via API
+  const [voteCounts, setVoteCounts] = useState<Record<string, number>>({});
+  const [userVotes, setUserVotes] = useState<Set<string>>(new Set());
+  const [votingId, setVotingId] = useState<string | null>(null);
 
-  const handleVote = useCallback((e: React.MouseEvent, coingeckoId: string) => {
+  useEffect(() => {
+    const userId = getUserId();
+    Promise.all([fetchVoteCounts(), fetchUserVotes(userId)]).then(
+      ([counts, votes]) => {
+        setVoteCounts(counts);
+        setUserVotes(votes);
+      }
+    );
+  }, []);
+
+  const handleVote = useCallback(async (e: React.MouseEvent, coingeckoId: string) => {
     e.stopPropagation();
-    const result = toggleVote(coingeckoId);
-    setVoteCounts((prev) => ({ ...prev, [coingeckoId]: result.count }));
+    if (votingId) return;
+    setVotingId(coingeckoId);
+
+    // Optimistic update
+    const wasVoted = userVotes.has(coingeckoId);
+    const optimisticCount = (voteCounts[coingeckoId] ?? 0) + (wasVoted ? -1 : 1);
+    setVoteCounts((prev) => ({ ...prev, [coingeckoId]: Math.max(0, optimisticCount) }));
     setUserVotes((prev) => {
       const next = new Set(prev);
-      if (result.voted) next.add(coingeckoId);
-      else next.delete(coingeckoId);
+      if (wasVoted) next.delete(coingeckoId);
+      else next.add(coingeckoId);
       return next;
     });
-  }, []);
+
+    try {
+      const result = await toggleVoteApi(coingeckoId, getUserId());
+      setVoteCounts((prev) => ({ ...prev, [coingeckoId]: result.count }));
+      setUserVotes((prev) => {
+        const next = new Set(prev);
+        if (result.voted) next.add(coingeckoId);
+        else next.delete(coingeckoId);
+        return next;
+      });
+    } catch {
+      // Revert optimistic update on error
+      setVoteCounts((prev) => ({ ...prev, [coingeckoId]: (voteCounts[coingeckoId] ?? 0) }));
+      setUserVotes((prev) => {
+        const next = new Set(prev);
+        if (wasVoted) next.add(coingeckoId);
+        else next.delete(coingeckoId);
+        return next;
+      });
+    } finally {
+      setVotingId(null);
+    }
+  }, [votingId, userVotes, voteCounts]);
 
   // On-demand MDS scoring state
   const [scores, setScores] = useState<Record<string, number>>({});
