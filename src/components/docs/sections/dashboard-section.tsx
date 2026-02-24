@@ -254,6 +254,26 @@ export function DashboardSection() {
           Click any migrated token to jump to the Migration Health page and
           review its post-migration performance.
         </p>
+        <div className="mt-4">
+          <DocsCallout type="info" title="Source of truth">
+            These 4 tokens were identified from Sunrise&apos;s (by Wormhole)
+            public portfolio of completed migrations. Each project publicly
+            announced its move to Solana &mdash; RENDER migrated in Nov 2023,
+            HNT (Helium) in Apr 2023, POWR (Power Ledger) via Wormhole NTT in
+            Feb 2025, and GEOD (GEODNET) in Sep 2024. Their Solana mint
+            addresses are verified on-chain and stored in{" "}
+            <span className="font-mono text-xs text-foreground">
+              MIGRATED_TOKENS
+            </span>{" "}
+            inside{" "}
+            <span className="font-mono text-xs text-foreground">
+              lib/config/tokens.ts
+            </span>
+            . All live metrics (price, volume, health scores) are fetched from
+            CoinGecko and WormholeScan at runtime &mdash; only the token
+            registry itself is static.
+          </DocsCallout>
+        </div>
       </div>
     </DocsSection>
   );
