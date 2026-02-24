@@ -3,7 +3,6 @@ import {
   Sparkles,
   GitBranch,
   Droplets,
-  ShieldAlert,
   Copy,
   Trash2,
   ExternalLink,

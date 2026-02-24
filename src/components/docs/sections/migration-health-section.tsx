@@ -1,7 +1,6 @@
 import {
   Activity,
   TrendingUp,
-  Shield,
   ArrowUpDown,
   BarChart3,
   Calendar,

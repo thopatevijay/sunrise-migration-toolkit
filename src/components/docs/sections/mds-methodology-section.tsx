@@ -1,15 +1,7 @@
-import {
-  Target,
-  ArrowRight,
-  Calculator,
-  Gauge,
-  ShieldAlert,
-  BarChart3,
-} from "lucide-react";
+import { Target, BarChart3 } from "lucide-react";
 import { DocsSection } from "@/components/docs/docs-section";
 import { DocsCallout } from "@/components/docs/docs-callout";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,

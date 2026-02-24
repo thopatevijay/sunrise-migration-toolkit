@@ -9,7 +9,6 @@ import {
 } from "lucide-react";
 import { DocsSection } from "@/components/docs/docs-section";
 import { DocsCallout } from "@/components/docs/docs-callout";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   Table,
   TableBody,
