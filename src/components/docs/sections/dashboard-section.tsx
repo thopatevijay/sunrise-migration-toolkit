@@ -93,7 +93,7 @@ const chartTabs = [
     icon: Layers,
     title: "MDS Breakdown",
     description:
-      "Stacked area chart showing weighted signal contributions over time. See how Bridge, Search, Social, Chain Health, and Wallet Overlap shift across the candidate pool.",
+      "Stacked area chart showing weighted signal contributions for the top 5 tokens. See how Bridge, Search, Social, Chain Health, and Wallet Overlap contribute to each token\u2019s MDS.",
   },
 ];
 

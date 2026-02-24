@@ -31,7 +31,7 @@ const scoreComponents = [
     name: "Stability Score",
     weight: "0.30",
     description:
-      "30-day price change stability. Lower volatility indicates a healthier, more mature migration.",
+      "30-day price direction. Positive price movement scores higher, indicating post-migration growth and adoption.",
   },
   {
     name: "Bridge Score",

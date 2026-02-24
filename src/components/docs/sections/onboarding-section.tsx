@@ -64,26 +64,26 @@ const supportedTokens = [
   {
     token: "RENDER",
     chain: "Ethereum",
-    date: "Oct 2023",
-    bridges: "Wormhole Portal",
+    date: "Nov 2023",
+    bridges: "Wormhole Portal, deBridge",
   },
   {
     token: "HNT",
     chain: "Helium",
     date: "Apr 2023",
-    bridges: "NTT, deBridge",
+    bridges: "Helium Wallet App",
   },
   {
     token: "POWR",
     chain: "Ethereum",
-    date: "Feb 2024",
-    bridges: "Wormhole Portal, deBridge",
+    date: "Feb 2025",
+    bridges: "Wormhole NTT, deBridge",
   },
   {
     token: "GEOD",
-    chain: "Ethereum",
-    date: "Mar 2024",
-    bridges: "Wormhole Portal",
+    chain: "Polygon",
+    date: "Sep 2024",
+    bridges: "Wormhole NTT",
   },
 ];
 

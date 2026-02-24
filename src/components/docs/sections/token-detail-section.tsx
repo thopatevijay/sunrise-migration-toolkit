@@ -24,7 +24,7 @@ const signals = [
     title: "Bridge Outflow",
     weight: "30%",
     description:
-      "7-day cross-chain bridge volume leaving the token\u2019s origin chain. Shows a mini area chart of 14-day trends.",
+      "7-day cross-chain bridge volume leaving the token\u2019s origin chain, displayed as a total USD figure.",
     details:
       "Data sourced from WormholeScan when available. Tokens without direct bridge data show estimated values derived from market volume with a 50% confidence discount.",
     badgeLabel: "Live or Estimated",

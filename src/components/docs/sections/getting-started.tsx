@@ -163,7 +163,7 @@ export function GettingStarted() {
         Use the sidebar to navigate between pages. The{" "}
         <span className="font-medium text-foreground">API Health Board</span> at
         the bottom of the sidebar shows real-time status of all data providers
-        (CoinGecko, DexScreener, WormholeScan, DefiLlama, Helius).
+        (CoinGecko, DexScreener, WormholeScan, DefiLlama, Jupiter).
       </DocsCallout>
     </DocsSection>
   );

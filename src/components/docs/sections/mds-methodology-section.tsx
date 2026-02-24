@@ -53,7 +53,7 @@ const normalizationDetails = [
   {
     title: "Search Intent",
     details:
-      "35% DEX volume ($1M+ = max) + 25% txn count (10K+ = max) + 15% liquidity ($5M+ = max) + 15% pair count + unmet demand bonus (+15 if NOT on Jupiter) + boost bonus",
+      "35% DEX volume ($1M+ = max) + 25% txn count (10K+ = max) + 15% liquidity ($5M+ = max) + unmet demand bonus (+15 if NOT on Jupiter) + boost bonus (+10 if trending)",
   },
   {
     title: "Social Demand",
