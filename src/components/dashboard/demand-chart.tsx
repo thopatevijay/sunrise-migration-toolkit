@@ -2,16 +2,17 @@
 
 import { useState, useMemo } from "react";
 import {
+  BarChart,
+  Bar,
   AreaChart,
   Area,
-  LineChart,
-  Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
   Legend,
+  Cell,
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -39,26 +40,23 @@ export function DemandChart({ tokens, isLoading }: DemandChartProps) {
 
   const top5 = useMemo(() => tokens.slice(0, 5), [tokens]);
 
+  // Real 7-day bridge volumes per token (no fabrication)
   const bridgeData = useMemo(() => {
-    if (top5.length === 0) return [];
-    const days = 30;
-    return Array.from({ length: days }, (_, i) => {
-      const date = new Date();
-      date.setDate(date.getDate() - (days - 1 - i));
-      const label = date.toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-      });
+    return top5.map((token, idx) => ({
+      name: token.symbol,
+      volume: token.bridgeVolume7d,
+      color: CHART_COLORS[idx],
+    }));
+  }, [top5]);
 
-      const point: Record<string, string | number> = { date: label };
-      top5.forEach((token, idx) => {
-        const base = token.bridgeVolume7d / 7;
-        const trend = 1 + (i / days) * 0.3;
-        const noise = 1 + Math.sin(i * (1 + idx * 0.5)) * 0.25;
-        point[token.symbol] = Math.round(base * trend * noise);
-      });
-      return point;
-    });
+  // Real search intent scores per token
+  const searchData = useMemo(() => {
+    return top5.map((token, idx) => ({
+      name: token.symbol,
+      score: token.mds.breakdown.searchIntent.normalized,
+      trend: token.searchTrend,
+      color: CHART_COLORS[idx],
+    }));
   }, [top5]);
 
   const mdsData = useMemo(() => {
@@ -100,7 +98,7 @@ export function DemandChart({ tokens, isLoading }: DemandChartProps) {
                 Bridge Outflows
               </TabsTrigger>
               <TabsTrigger value="search" className="text-xs h-6 px-3">
-                Search Trends
+                Search Intent
               </TabsTrigger>
               <TabsTrigger value="mds" className="text-xs h-6 px-3">
                 MDS Breakdown
@@ -113,40 +111,16 @@ export function DemandChart({ tokens, isLoading }: DemandChartProps) {
         <div className="h-72">
           <ResponsiveContainer width="100%" height="100%">
             {activeTab === "bridge" ? (
-              <AreaChart data={bridgeData}>
-                <defs>
-                  {top5.map((token, idx) => (
-                    <linearGradient
-                      key={token.symbol}
-                      id={`grad-${token.symbol}`}
-                      x1="0"
-                      y1="0"
-                      x2="0"
-                      y2="1"
-                    >
-                      <stop
-                        offset="5%"
-                        stopColor={CHART_COLORS[idx]}
-                        stopOpacity={0.3}
-                      />
-                      <stop
-                        offset="95%"
-                        stopColor={CHART_COLORS[idx]}
-                        stopOpacity={0}
-                      />
-                    </linearGradient>
-                  ))}
-                </defs>
+              <BarChart data={bridgeData}>
                 <CartesianGrid
                   strokeDasharray="3 3"
                   stroke="rgba(255,255,255,0.05)"
                 />
                 <XAxis
-                  dataKey="date"
-                  tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                  dataKey="name"
+                  tick={{ fontSize: 12, fill: "hsl(var(--foreground))" }}
                   tickLine={false}
                   axisLine={false}
-                  interval={6}
                 />
                 <YAxis
                   tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
@@ -161,41 +135,32 @@ export function DemandChart({ tokens, isLoading }: DemandChartProps) {
                     borderRadius: "8px",
                     fontSize: 12,
                   }}
-                  formatter={(value: number) => [formatUSD(value), ""]}
+                  formatter={(value: number) => [formatUSD(value), "7d Volume"]}
+                  cursor={{ fill: "rgba(255,255,255,0.03)" }}
                 />
-                <Legend
-                  wrapperStyle={{ fontSize: 11 }}
-                  iconType="circle"
-                  iconSize={8}
-                />
-                {top5.map((token, idx) => (
-                  <Area
-                    key={token.symbol}
-                    type="monotone"
-                    dataKey={token.symbol}
-                    stroke={CHART_COLORS[idx]}
-                    fill={`url(#grad-${token.symbol})`}
-                    strokeWidth={2}
-                  />
-                ))}
-              </AreaChart>
+                <Bar dataKey="volume" radius={[4, 4, 0, 0]} name="7d Bridge Volume">
+                  {bridgeData.map((entry, idx) => (
+                    <Cell key={entry.name} fill={CHART_COLORS[idx]} fillOpacity={0.7} />
+                  ))}
+                </Bar>
+              </BarChart>
             ) : activeTab === "search" ? (
-              <LineChart data={bridgeData}>
+              <BarChart data={searchData}>
                 <CartesianGrid
                   strokeDasharray="3 3"
                   stroke="rgba(255,255,255,0.05)"
                 />
                 <XAxis
-                  dataKey="date"
-                  tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                  dataKey="name"
+                  tick={{ fontSize: 12, fill: "hsl(var(--foreground))" }}
                   tickLine={false}
                   axisLine={false}
-                  interval={6}
                 />
                 <YAxis
                   tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
                   tickLine={false}
                   axisLine={false}
+                  domain={[0, 100]}
                 />
                 <Tooltip
                   contentStyle={{
@@ -204,23 +169,18 @@ export function DemandChart({ tokens, isLoading }: DemandChartProps) {
                     borderRadius: "8px",
                     fontSize: 12,
                   }}
+                  formatter={(value: number, name: string) => [
+                    name === "score" ? `${value}/100` : `${value > 0 ? "+" : ""}${value}%`,
+                    name === "score" ? "Search Score" : "Trend",
+                  ]}
+                  cursor={{ fill: "rgba(255,255,255,0.03)" }}
                 />
-                <Legend
-                  wrapperStyle={{ fontSize: 11 }}
-                  iconType="circle"
-                  iconSize={8}
-                />
-                {top5.map((token, idx) => (
-                  <Line
-                    key={token.symbol}
-                    type="monotone"
-                    dataKey={token.symbol}
-                    stroke={CHART_COLORS[idx]}
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                ))}
-              </LineChart>
+                <Bar dataKey="score" radius={[4, 4, 0, 0]} name="Search Intent Score">
+                  {searchData.map((entry, idx) => (
+                    <Cell key={entry.name} fill={CHART_COLORS[idx]} fillOpacity={0.7} />
+                  ))}
+                </Bar>
+              </BarChart>
             ) : (
               <AreaChart
                 data={mdsData}

@@ -24,7 +24,6 @@ import { Search, ArrowUpDown } from "lucide-react";
 import { MdsBadge } from "@/components/shared/mds-badge";
 import { ChainBadge } from "@/components/shared/chain-badge";
 import { TrendIndicator } from "@/components/shared/trend-indicator";
-import { Sparkline } from "./sparkline";
 import { formatUSD } from "@/lib/utils";
 import { CHAINS } from "@/lib/config/chains";
 import type { TokenWithScore } from "@/lib/data";
@@ -227,17 +226,21 @@ export function TokenTable({ tokens, isLoading }: TokenTableProps) {
                     {token.hasMarketData ? formatUSD(token.marketCap) : "—"}
                   </TableCell>
                   <TableCell className="hidden lg:table-cell">
-                    <Sparkline
-                      data={Array.from({ length: 14 }, (_, i) =>
-                        Math.round(
-                          (token.mds.breakdown.searchIntent.normalized / 100) *
-                            (80 + Math.sin(i * 1.2) * 20)
-                        )
-                      )}
-                      color={
-                        token.searchTrend > 0 ? "#34d399" : "#f87171"
-                      }
-                    />
+                    <div className="flex items-center gap-1.5">
+                      <div className="h-1.5 w-16 rounded-full bg-white/5 overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all duration-500"
+                          style={{
+                            width: `${token.mds.breakdown.searchIntent.normalized}%`,
+                            backgroundColor: token.searchTrend > 0 ? "#34d399" : "#f87171",
+                            opacity: 0.7,
+                          }}
+                        />
+                      </div>
+                      <span className="text-xs font-mono text-muted-foreground w-8">
+                        {token.mds.breakdown.searchIntent.normalized}
+                      </span>
+                    </div>
                   </TableCell>
                   <TableCell>
                     <TrendIndicator value={token.change7d} />
