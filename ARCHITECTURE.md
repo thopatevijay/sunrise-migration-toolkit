@@ -23,7 +23,7 @@ src/
 │   ├── not-found.tsx                 # 404 page
 │   ├── globals.css                   # Dark theme, glassmorphism, gradients
 │   ├── (dashboard)/                  # Demand Discovery Dashboard
-│   │   ├── layout.tsx                # Sidebar + header + demo banner
+│   │   ├── layout.tsx                # Sidebar + header + data status banner
 │   │   ├── loading.tsx               # Skeleton loading state
 │   │   ├── page.tsx                  # Main dashboard (stats, table, charts, funnel)
 │   │   ├── tokens/[id]/page.tsx      # Token detail (radar, signals, proposal)
@@ -83,7 +83,7 @@ src/
 │   │       └── defi-step.tsx         # DeFi opportunities + live APYs from DefiLlama
 │   ├── shared/
 │   │   ├── chain-badge.tsx           # Chain logo + name
-│   │   ├── demo-banner.tsx           # Data source indicator (live/partial)
+│   │   ├── data-status-banner.tsx     # Data source indicator (live/partial)
 │   │   ├── mds-badge.tsx             # Score-colored badge
 │   │   ├── motion.tsx                # Framer Motion animation wrappers
 │   │   ├── score-ring.tsx            # Circular SVG MDS progress
@@ -117,7 +117,6 @@ src/
 │   │   │   ├── defillama.ts          # TVL, protocol data, bridge volumes, Solana TVL ratios
 │   │   │   ├── defillama-yields.ts   # Live DeFi APYs (Kamino, MarginFi, Raydium, Orca, etc.)
 │   │   │   ├── jupiter.ts            # Jupiter listing verification + prices
-│   │   │   ├── debridge.ts           # Supplemental bridge data
 │   │   │   ├── wallet-heuristic.ts   # Wallet overlap estimation (chain proximity + TVL ratios)
 │   │   │   └── index.ts              # Re-exports all providers
 │   │   └── (no demo folder — all data from live APIs)
@@ -193,7 +192,7 @@ The scoring engine aggregates five signal categories into a single score per tok
 ### Signal Categories
 
 **1. Bridge Outflow Volume (weight: 0.30)**
-- Source: WormholeScan `top-assets-by-volume` API + deBridge supplemental data
+- Source: WormholeScan `top-assets-by-volume` API
 - Metric: Cross-chain bridge volume for this token (7d + 30d)
 - Estimation fallback: When WormholeScan lacks data, uses market cap × volume ratio (marked `dataSource: "estimated"`)
 - Estimated bridge data receives 50% confidence discount (effective weight: 15% instead of 30%)
@@ -252,7 +251,6 @@ A token with 3/5 signals gets `confidence: 0.6`. Tokens with 0 signals are exclu
 | DefiLlama | `api.llama.fi` / `bridges.llama.fi` / `yields.llama.fi` | TVL, protocols, bridge volumes, DeFi APYs | ~100/min |
 | DexScreener | `api.dexscreener.com` | DEX trading pairs, volume, liquidity, trending boosts | 300/min |
 | Jupiter | `lite-api.jup.ag` / `tokens.jup.ag` | Token listing verification, prices | 60/min |
-| deBridge | `dln.debridge.finance/v1.0` | Supported chains, orders | Generous |
 
 ### Tier 2: Free with API Key (optional)
 
@@ -341,7 +339,7 @@ The dashboard no longer uses a hardcoded 12-token list. Instead:
 
 `POST /api/tokens/score` accepts `{ coingeckoId, symbol, name, originChain }` and:
 1. Checks Jupiter listing status (used for unmet demand signal)
-2. Fetches all 5 signal categories in parallel (market via CoinGecko, DEX activity via DexScreener, social via CoinGecko, bridge via WormholeScan/deBridge, wallet overlap via heuristic)
+2. Fetches all 5 signal categories in parallel (market via CoinGecko, DEX activity via DexScreener, social via CoinGecko, bridge via WormholeScan, wallet overlap via heuristic)
 3. Runs `calculateMDS()` on the signals
 4. Returns `{ mds, marketCap, volume24h, bridgeVolume7d }`
 5. Cached per token for 5 minutes
@@ -389,7 +387,7 @@ Auto-generates structured migration analysis from token data:
 
 ## API Health Board
 
-Real-time sidebar panel showing the status of all API providers (CoinGecko, WormholeScan, DefiLlama, Jupiter, deBridge, DexScreener, Helius).
+Real-time sidebar panel showing the status of all API providers (CoinGecko, WormholeScan, DefiLlama, Jupiter, DexScreener).
 
 ### How It Works
 
@@ -438,7 +436,7 @@ All MDS signals trace to real APIs — no hardcoded, fabricated, or simulated da
 
 | Signal | Provider | What's Real |
 |--------|----------|------------|
-| Bridge outflow | WormholeScan + deBridge | Actual cross-chain bridge volumes and timeseries |
+| Bridge outflow | WormholeScan | Actual cross-chain bridge volumes (7d + 30d) |
 | Search intent | DexScreener | Real 24h DEX volume, pair counts, liquidity, trending data |
 | Social demand | CoinGecko | Real twitter followers, reddit subscribers, sentiment votes |
 | Chain health | CoinGecko + DefiLlama | Real market cap, volume, TVL, price history |

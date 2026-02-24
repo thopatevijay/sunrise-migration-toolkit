@@ -75,7 +75,7 @@ Dynamically scores the **top 50 non-Solana tokens** (by market cap) using 5 real
 
 | Signal | Weight | Source | What it tells us |
 |--------|--------|--------|-----------------|
-| Bridge outflows | 30% | WormholeScan, deBridge | Solana users leaving to buy tokens elsewhere |
+| Bridge outflows | 30% | WormholeScan | Solana users leaving to buy tokens elsewhere |
 | Search intent | 25% | DexScreener (DEX trading activity) | Real trading volume, liquidity, and pair counts across DEXs |
 | Social demand | 20% | CoinGecko community data | Twitter followers, Reddit activity, sentiment votes |
 | Origin-chain health | 15% | CoinGecko, DefiLlama | Token health: volume, TVL, holder count, market cap |
@@ -163,7 +163,7 @@ Currently live for: RENDER, HNT, POWR, GEOD
 | Market data | CoinGecko | Price, market cap, volume, TVL, ATH, 30d price history |
 | Social data | CoinGecko | Twitter followers, Reddit subscribers, Reddit active users, sentiment votes |
 | Search intent | DexScreener | 24h DEX volume, pair counts, Solana pairs, liquidity, trending/boost scores |
-| Bridge outflows | WormholeScan + deBridge | 7d/30d bridge volumes, timeseries, transaction counts |
+| Bridge outflows | WormholeScan | 7d/30d bridge volumes, transaction counts |
 | TVL & protocols | DefiLlama | Protocol TVL, Solana TVL ratios, chain bridge volumes |
 | DeFi yields | DefiLlama Yields | Live APYs for Kamino, MarginFi, Raydium, Orca, Drift, Sanctum, Jupiter |
 | Token listing | Jupiter | Whether token exists on Jupiter (verified listing check) |
@@ -244,11 +244,11 @@ Tideshift turns Sunrise's migration pipeline from a series of one-off efforts in
 │  │Market +  │ │Bridge    │ │TVL +     │ │DEX Data  │ │ Holder   │     │
 │  │Social    │ │Data      │ │Yields    │ │+ Trends  │ │ Counts   │     │
 │  └──────────┘ └──────────┘ └──────────┘ └──────────┘ └──────────┘     │
-│  ┌──────────┐ ┌──────────┐ ┌──────────┐                               │
-│  │ Jupiter  │ │ deBridge │ │ Upstash  │                               │
-│  │ Listing  │ │ Bridge   │ │ Redis    │                               │
-│  │ Check    │ │ Data     │ │ Votes    │                               │
-│  └──────────┘ └──────────┘ └──────────┘                               │
+│  ┌──────────┐ ┌──────────┐                                            │
+│  │ Jupiter  │ │ Upstash  │                                            │
+│  │ Listing  │ │ Redis    │                                            │
+│  │ Check    │ │ Votes    │                                            │
+│  └──────────┘ └──────────┘                                            │
 │                                                                          │
 │  ┌─────────────────────────────────────────────────────────────────┐    │
 │  │  Batch Processing (5/batch, 2s delay) + TTL Cache + Health Board│    │
@@ -263,7 +263,7 @@ Tideshift turns Sunrise's migration pipeline from a series of one-off efforts in
 |-------|-----------|
 | Frontend | Next.js 14, Tailwind CSS, Recharts, shadcn/ui, Framer Motion |
 | Data Fetching | SWR (auto-refresh), server-side TTL cache |
-| APIs (Free, no auth) | WormholeScan, DefiLlama, DexScreener, Jupiter, deBridge |
+| APIs (Free, no auth) | WormholeScan, DefiLlama, DexScreener, Jupiter |
 | APIs (Free, key required) | CoinGecko (market + social), Helius (holder counts) |
 | Persistent Storage | Upstash Redis (community demand votes + onboarding analytics) |
 | Monitoring | API Health Board (real-time provider status in sidebar) |
@@ -329,7 +329,7 @@ Open [http://localhost:3000](http://localhost:3000) to see the application.
 | `UPSTASH_REDIS_REST_URL` | Optional | Persistent community demand votes ([free tier](https://upstash.com): 10K cmds/day) |
 | `UPSTASH_REDIS_REST_TOKEN` | Optional | Redis auth token for Upstash |
 
-> **Note:** All Tier 1 APIs (WormholeScan, DefiLlama, DexScreener, Jupiter, deBridge) require no API keys. The app works without any env variables — keys unlock higher rate limits and additional features.
+> **Note:** All Tier 1 APIs (WormholeScan, DefiLlama, DexScreener, Jupiter) require no API keys. The app works without any env variables — keys unlock higher rate limits and additional features.
 
 ---
 
