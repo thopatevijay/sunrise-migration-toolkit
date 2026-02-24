@@ -95,6 +95,15 @@ export const CHAINS: Record<ChainId, ChainConfig> = {
     nativeCurrency: "MON",
     bridgeSupport: { wormhole: false, debridge: false },
   },
+  helium: {
+    id: "helium",
+    name: "Helium",
+    shortName: "HNT",
+    color: "#474DFF",
+    explorerUrl: "https://explorer.helium.com",
+    nativeCurrency: "HNT",
+    bridgeSupport: { wormhole: false, debridge: false },
+  },
   sui: {
     id: "sui",
     name: "Sui",

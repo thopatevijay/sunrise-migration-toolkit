@@ -35,10 +35,10 @@ const navItems = [
 ];
 
 const onboardingItems = [
-  { title: "HYPE Onboarding", href: "/onboard/hype" },
-  { title: "MON Onboarding", href: "/onboard/mon" },
-  { title: "LIT Onboarding", href: "/onboard/lit" },
-  { title: "INX Onboarding", href: "/onboard/inx" },
+  { title: "RENDER Onboarding", href: "/onboard/render" },
+  { title: "HNT Onboarding", href: "/onboard/hnt" },
+  { title: "POWR Onboarding", href: "/onboard/powr" },
+  { title: "GEOD Onboarding", href: "/onboard/geod" },
 ];
 
 export function AppSidebar() {
