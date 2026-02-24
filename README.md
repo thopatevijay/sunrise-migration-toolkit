@@ -145,7 +145,7 @@ A white-label, per-token onboarding experience that Sunrise deploys for each mig
 - **Origin-chain aware** — detects which chain the user is coming from
 - **Live DeFi APYs** — real yield data from DefiLlama (Kamino, Raydium, MarginFi, etc.)
 - **Progress tracking** — users see where they are in the onboarding journey
-- **Analytics dashboard** — Sunrise sees conversion rates at each step
+- **Analytics dashboard** — real-time conversion funnel backed by Upstash Redis 
 - **Shareable** — token communities can share the onboarding link on their Discord/Twitter
 
 **Who uses this:** Token communities migrating to Solana. Sunrise team, to measure migration success.
@@ -169,6 +169,7 @@ Currently live for: RENDER, HNT, POWR, GEOD
 | Token listing | Jupiter | Whether token exists on Jupiter (verified listing check) |
 | Holder counts | Helius DAS API | Real SPL token holder counts for Solana-listed tokens |
 | Wallet overlap | Heuristic + DefiLlama | Chain proximity + bridge data + protocol TVL ratios |
+| Onboarding analytics | Upstash Redis | Real funnel conversion tracking (Redis SETs, auto-deduplicated) |
 | Demand votes | Upstash Redis | Persistent community voting (anonymous, one per user per token) |
 
 ---
@@ -264,7 +265,7 @@ Tideshift turns Sunrise's migration pipeline from a series of one-off efforts in
 | Data Fetching | SWR (auto-refresh), server-side TTL cache |
 | APIs (Free, no auth) | WormholeScan, DefiLlama, DexScreener, Jupiter, deBridge |
 | APIs (Free, key required) | CoinGecko (market + social), Helius (holder counts) |
-| Persistent Storage | Upstash Redis (community demand votes) |
+| Persistent Storage | Upstash Redis (community demand votes + onboarding analytics) |
 | Monitoring | API Health Board (real-time provider status in sidebar) |
 | Deployment | Vercel |
 

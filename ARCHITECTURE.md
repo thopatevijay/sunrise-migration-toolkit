@@ -50,6 +50,8 @@ src/
 │       ├── votes/
 │       │   ├── route.ts              # GET/POST /api/votes (community demand votes via Upstash Redis)
 │       │   └── user/route.ts         # GET /api/votes/user (per-user vote history)
+│       ├── analytics/
+│       │   └── onboarding/route.ts   # GET/POST /api/analytics/onboarding (Redis-backed funnel)
 │       └── yields/
 │           └── route.ts              # GET /api/yields (live DeFi APYs from DefiLlama)
 ├── components/
@@ -125,7 +127,7 @@ src/
 │   │   ├── weights.ts                # Signal weights + labels
 │   │   └── migration-analysis.ts     # Auto-analysis: bridge recommendation, liquidity, risk, competitive
 │   ├── analytics/
-│   │   └── onboarding.ts             # Step tracking + funnel (localStorage)
+│   │   └── onboarding.ts             # Step tracking via API (fire-and-forget POST to Redis)
 │   ├── types/
 │   │   ├── scoring.ts                # MDS interfaces + score utilities
 │   │   ├── signals.ts                # Signal type definitions (bridge, search, social, market, wallet)
@@ -193,7 +195,8 @@ The scoring engine aggregates five signal categories into a single score per tok
 **1. Bridge Outflow Volume (weight: 0.30)**
 - Source: WormholeScan `top-assets-by-volume` API + deBridge supplemental data
 - Metric: Cross-chain bridge volume for this token (7d + 30d)
-- Estimation fallback: When WormholeScan lacks data, uses market cap × volume ratio
+- Estimation fallback: When WormholeScan lacks data, uses market cap × volume ratio (marked `dataSource: "estimated"`)
+- Estimated bridge data receives 50% confidence discount (effective weight: 15% instead of 30%)
 - Higher outflow = active cross-chain demand for this asset
 
 **2. Search Intent (weight: 0.25)**
@@ -412,10 +415,12 @@ The DeFi step fetches real yield data from DefiLlama Yields API:
 
 ### Analytics Funnel
 
-Step completion tracked via localStorage:
-- Each step records: `{ token, step, stepName, timestamp, sessionId }`
-- Funnel visualization on dashboard shows conversion rates
-- Demo funnel data shown when no real sessions exist yet
+Step completion tracked via Upstash Redis (same instance as demand votes):
+- `POST /api/analytics/onboarding` records `{ token, step, sessionId }` → Redis SET per step (auto-deduplicates)
+- `GET /api/analytics/onboarding?token=render` reads unique visitor counts per step via `SCARD`
+- `GET /api/analytics/onboarding` (no token param) aggregates across all 4 tokens
+- Dashboard funnel component uses SWR with 30s auto-refresh
+- Shows "No onboarding sessions recorded yet" when no real data exists (no demo/fake data)
 
 ### White-Label Configuration
 
@@ -440,4 +445,12 @@ All MDS signals trace to real APIs — no hardcoded, fabricated, or simulated da
 | Holder counts | Helius DAS API | Real on-chain SPL token holder counts (paginated scan) |
 | Wallet overlap | Heuristic + DefiLlama | Chain proximity model enhanced with real protocol TVL ratios |
 | DeFi yields | DefiLlama Yields | Real APYs for Kamino, MarginFi, Raydium, etc. |
+| Onboarding analytics | Upstash Redis | Real funnel conversion data (Redis SETs, auto-deduplicated) |
 | Demand votes | Upstash Redis | Persistent community votes (not localStorage) |
+
+### Missing Data Handling
+
+When API providers are rate-limited or unavailable, the UI shows "—" instead of misleading `$0.00` values:
+- `hasMarketData` flag on `TokenWithScore` / `TokenDetail` — controls price, market cap, volume, TVL, holders, ATH display
+- `hasSocialData` flag on `TokenDetail` — controls community score, sentiment, Twitter/Reddit display
+- Scoring engine still uses `?? 0` numeric fallbacks (needed for math), but UI distinguishes real zeros from missing data
