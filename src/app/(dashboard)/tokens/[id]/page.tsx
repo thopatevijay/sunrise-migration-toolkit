@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { useToken, useTokens } from "@/hooks/use-tokens";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Card, CardContent } from "@/components/ui/card";
+import { LoadingOverlay } from "@/components/shared/loading-overlay";
 import { TokenHeader } from "@/components/dashboard/token-detail/token-header";
 import { ScoreBreakdownChart } from "@/components/dashboard/token-detail/score-breakdown";
 import { SignalCards } from "@/components/dashboard/token-detail/signal-cards";
@@ -22,24 +21,7 @@ export default function TokenDetailPage({
   const [proposalOpen, setProposalOpen] = useState(false);
 
   if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <Card className="glass-card">
-          <CardContent className="flex items-center gap-6 pt-6">
-            <Skeleton className="h-14 w-14 rounded-full" />
-            <div className="space-y-2 flex-1">
-              <Skeleton className="h-7 w-40" />
-              <Skeleton className="h-4 w-64" />
-            </div>
-            <Skeleton className="h-16 w-16 rounded-full" />
-          </CardContent>
-        </Card>
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <Skeleton className="h-80 rounded-xl" />
-          <Skeleton className="h-80 rounded-xl" />
-        </div>
-      </div>
-    );
+    return <LoadingOverlay isLoading={true} variant="detail" />;
   }
 
   if (error || !token) {

@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowRight } from "lucide-react";
 import { ONBOARDING_CONFIGS } from "@/lib/config/onboarding";
 import { FadeIn } from "@/components/shared/motion";
+import { LoadingOverlay } from "@/components/shared/loading-overlay";
 import { OnboardingAnalytics } from "@/components/onboarding/onboarding-analytics";
 
 export default function DashboardPage() {
@@ -31,10 +32,16 @@ export default function DashboardPage() {
         </div>
       </FadeIn>
 
-      <StatsBar stats={stats} isLoading={isLoading} />
-      <MigratedBanner tokens={migrated} isLoading={isLoading} />
-      <DemandChart tokens={candidates} isLoading={isLoading} />
-      <TokenTable tokens={candidates} isLoading={isLoading} />
+      {isLoading ? (
+        <LoadingOverlay isLoading={isLoading} variant="dashboard" />
+      ) : (
+        <>
+          <StatsBar stats={stats} isLoading={false} />
+          <MigratedBanner tokens={migrated} isLoading={false} />
+          <DemandChart tokens={candidates} isLoading={false} />
+          <TokenTable tokens={candidates} isLoading={false} />
+        </>
+      )}
 
       {/* Onboarding Analytics */}
       <OnboardingAnalytics />
