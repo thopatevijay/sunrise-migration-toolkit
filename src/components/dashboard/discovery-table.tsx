@@ -109,6 +109,7 @@ export function DiscoveryTable({ tokens, isLoading }: DiscoveryTableProps) {
   const [page, setPage] = useState(1);
   const [chainFilter, setChainFilter] = useState<Set<string>>(new Set());
   const [mcapBucket, setMcapBucket] = useState<MarketCapBucket>("all");
+  const [solanaFilter, setSolanaFilter] = useState<"all" | "wrapped" | "none">("all");
   const [myVotesOnly, setMyVotesOnly] = useState(false);
 
   // Extract unique chains sorted by frequency (most common first)
@@ -243,6 +244,11 @@ export function DiscoveryTable({ tokens, isLoading }: DiscoveryTableProps) {
       result = result.filter((t) => matchesMcapBucket(t.marketCap, mcapBucket));
     }
 
+    // Solana status filter
+    if (solanaFilter !== "all") {
+      result = result.filter((t) => t.solanaStatus === solanaFilter);
+    }
+
     // My votes filter
     if (myVotesOnly) {
       result = result.filter((t) => userVotes.has(t.coingeckoId));
@@ -277,7 +283,7 @@ export function DiscoveryTable({ tokens, isLoading }: DiscoveryTableProps) {
     });
 
     return result;
-  }, [tokens, search, chainFilter, mcapBucket, myVotesOnly, sortKey, sortAsc, voteCounts, userVotes, scores]);
+  }, [tokens, search, chainFilter, mcapBucket, solanaFilter, myVotesOnly, sortKey, sortAsc, voteCounts, userVotes, scores]);
 
   // Pagination
   const effectivePageSize = pageSize === "all" ? filtered.length : pageSize;
@@ -441,6 +447,22 @@ export function DiscoveryTable({ tokens, isLoading }: DiscoveryTableProps) {
             <Star className={`h-3 w-3 ${myVotesOnly ? "fill-purple-400" : ""}`} />
             My Votes{userVotes.size > 0 && ` (${userVotes.size})`}
           </button>
+          <div className="w-px h-4 bg-white/10 mx-1" />
+          {(["all", "wrapped", "none"] as const).map((status) => (
+            <button
+              key={status}
+              onClick={() => { setSolanaFilter(status); setPage(1); }}
+              className={`px-2.5 py-1 rounded-full text-xs transition-colors ${
+                solanaFilter === status
+                  ? status === "wrapped"
+                    ? "bg-amber-500/20 text-amber-400 border border-amber-500/30 font-medium"
+                    : "bg-white/15 text-foreground font-medium border border-white/20"
+                  : "bg-white/5 text-muted-foreground hover:text-foreground hover:bg-white/10 border border-transparent"
+              }`}
+            >
+              {status === "all" ? "All Status" : status === "wrapped" ? "On Solana" : "No Solana"}
+            </button>
+          ))}
         </div>
         <div className="overflow-x-auto">
           <Table>
@@ -572,12 +594,29 @@ export function DiscoveryTable({ tokens, isLoading }: DiscoveryTableProps) {
                     </div>
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
-                    <Badge
-                      variant="outline"
-                      className="text-[10px] border-red-500/30 text-red-400"
-                    >
-                      No Solana
-                    </Badge>
+                    {token.solanaStatus === "wrapped" ? (
+                      <a
+                        href={`https://jup.ag/swap/USDC-${token.solanaMint}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="inline-block"
+                      >
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] border-amber-500/30 text-amber-400 hover:bg-amber-500/10 transition-colors cursor-pointer"
+                        >
+                          On Solana
+                        </Badge>
+                      </a>
+                    ) : (
+                      <Badge
+                        variant="outline"
+                        className="text-[10px] border-red-500/30 text-red-400"
+                      >
+                        No Solana
+                      </Badge>
+                    )}
                   </TableCell>
                   <TableCell className="w-8 pr-4">
                     <ExternalLink className="h-3.5 w-3.5 text-muted-foreground/40 group-hover:text-muted-foreground transition-colors" />
