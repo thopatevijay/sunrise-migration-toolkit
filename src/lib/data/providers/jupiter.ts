@@ -26,6 +26,54 @@ interface JupiterPriceResponse {
   data: Record<string, JupiterPriceData>;
 }
 
+// --- Token list for Solana presence detection ---
+
+export interface JupiterTokenInfo {
+  mint: string;
+  symbol: string;
+  name: string;
+}
+
+/**
+ * Fetch all verified Jupiter tokens and return a map keyed by uppercase symbol.
+ * Used to detect wrapped/bridged tokens that exist on Solana but aren't listed
+ * as native on CoinGecko. Single API call, cached for 60 minutes.
+ */
+export async function fetchJupiterTokenMap(): Promise<Map<string, JupiterTokenInfo>> {
+  const cacheKey = "jup:token-map";
+  const cached = cache.get<Map<string, JupiterTokenInfo>>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const result = await trackedFetch<JupiterToken[]>(
+      "jupiter",
+      `${LITE_BASE}/tokens/v2/all`
+    );
+
+    const map = new Map<string, JupiterTokenInfo>();
+    if (!result.data) return map;
+
+    for (const token of result.data) {
+      if (!token.symbol || !token.id) continue;
+      const key = token.symbol.toUpperCase();
+      // Keep the first match per symbol (Jupiter returns verified first)
+      if (!map.has(key)) {
+        map.set(key, {
+          mint: token.id,
+          symbol: token.symbol,
+          name: token.name,
+        });
+      }
+    }
+
+    cache.set(cacheKey, map, TTL.TOKEN_DISCOVERY);
+    return map;
+  } catch {
+    console.error("[jupiter] Failed to fetch token list");
+    return new Map();
+  }
+}
+
 // --- Exports ---
 
 /**
