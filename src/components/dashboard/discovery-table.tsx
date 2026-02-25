@@ -22,6 +22,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronUp,
+  Star,
   Loader2,
   Zap,
 } from "lucide-react";
@@ -46,6 +47,26 @@ const PAGE_SIZES: { label: string; value: PageSize }[] = [
   { label: "200", value: 200 },
   { label: "All", value: "all" },
 ];
+
+type MarketCapBucket = "all" | "1b" | "100m" | "10m" | "under10m";
+
+const MCAP_BUCKETS: { label: string; value: MarketCapBucket }[] = [
+  { label: "All Caps", value: "all" },
+  { label: "$1B+", value: "1b" },
+  { label: "$100M–$1B", value: "100m" },
+  { label: "$10M–$100M", value: "10m" },
+  { label: "<$10M", value: "under10m" },
+];
+
+function matchesMcapBucket(marketCap: number, bucket: MarketCapBucket): boolean {
+  switch (bucket) {
+    case "all": return true;
+    case "1b": return marketCap >= 1_000_000_000;
+    case "100m": return marketCap >= 100_000_000 && marketCap < 1_000_000_000;
+    case "10m": return marketCap >= 10_000_000 && marketCap < 100_000_000;
+    case "under10m": return marketCap < 10_000_000;
+  }
+}
 
 interface DiscoveryTableProps {
   tokens: DiscoveryToken[];
@@ -86,6 +107,32 @@ export function DiscoveryTable({ tokens, isLoading }: DiscoveryTableProps) {
   const [sortAsc, setSortAsc] = useState(true);
   const [pageSize, setPageSize] = useState<PageSize>(50);
   const [page, setPage] = useState(1);
+  const [chainFilter, setChainFilter] = useState<Set<string>>(new Set());
+  const [mcapBucket, setMcapBucket] = useState<MarketCapBucket>("all");
+  const [myVotesOnly, setMyVotesOnly] = useState(false);
+
+  // Extract unique chains sorted by frequency (most common first)
+  const availableChains = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const t of tokens) {
+      for (const c of t.originChains) {
+        counts.set(c, (counts.get(c) ?? 0) + 1);
+      }
+    }
+    return Array.from(counts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .map(([chain, count]) => ({ chain, count }));
+  }, [tokens]);
+
+  const handleChainToggle = useCallback((chain: string) => {
+    setChainFilter((prev) => {
+      const next = new Set(prev);
+      if (next.has(chain)) next.delete(chain);
+      else next.add(chain);
+      return next;
+    });
+    setPage(1);
+  }, []);
 
   // Demand vote state — backed by Upstash Redis via API
   const [voteCounts, setVoteCounts] = useState<Record<string, number>>({});
@@ -184,6 +231,23 @@ export function DiscoveryTable({ tokens, isLoading }: DiscoveryTableProps) {
   const filtered = useMemo(() => {
     let result = [...tokens];
 
+    // Chain filter
+    if (chainFilter.size > 0) {
+      result = result.filter((t) =>
+        t.originChains.some((c) => chainFilter.has(c))
+      );
+    }
+
+    // Market cap filter
+    if (mcapBucket !== "all") {
+      result = result.filter((t) => matchesMcapBucket(t.marketCap, mcapBucket));
+    }
+
+    // My votes filter
+    if (myVotesOnly) {
+      result = result.filter((t) => userVotes.has(t.coingeckoId));
+    }
+
     if (search) {
       const q = search.toLowerCase();
       result = result.filter(
@@ -213,7 +277,7 @@ export function DiscoveryTable({ tokens, isLoading }: DiscoveryTableProps) {
     });
 
     return result;
-  }, [tokens, search, sortKey, sortAsc, voteCounts, scores]);
+  }, [tokens, search, chainFilter, mcapBucket, myVotesOnly, sortKey, sortAsc, voteCounts, userVotes, scores]);
 
   // Pagination
   const effectivePageSize = pageSize === "all" ? filtered.length : pageSize;
@@ -322,6 +386,62 @@ export function DiscoveryTable({ tokens, isLoading }: DiscoveryTableProps) {
         </div>
       </CardHeader>
       <CardContent>
+        {/* Chain filter pills */}
+        {availableChains.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 pb-4 mb-4 border-b border-white/5">
+            <button
+              onClick={() => { setChainFilter(new Set()); setPage(1); }}
+              className={`px-2.5 py-1 rounded-full text-xs transition-colors ${
+                chainFilter.size === 0
+                  ? "bg-white/15 text-foreground font-medium border border-white/20"
+                  : "bg-white/5 text-muted-foreground hover:text-foreground hover:bg-white/10 border border-transparent"
+              }`}
+            >
+              All Chains
+            </button>
+            {availableChains.map(({ chain, count }) => (
+              <button
+                key={chain}
+                onClick={() => handleChainToggle(chain)}
+                className={`px-2.5 py-1 rounded-full text-xs transition-colors ${
+                  chainFilter.has(chain)
+                    ? "bg-purple-500/20 text-purple-400 border border-purple-500/30 font-medium"
+                    : "bg-white/5 text-muted-foreground hover:text-foreground hover:bg-white/10 border border-transparent"
+                }`}
+              >
+                {chain} <span className="text-[10px] opacity-60">{count}</span>
+              </button>
+            ))}
+          </div>
+        )}
+        {/* Market cap + My Votes filter pills */}
+        <div className="flex flex-wrap items-center gap-1.5 pb-4 mb-4 border-b border-white/5">
+          {MCAP_BUCKETS.map((b) => (
+            <button
+              key={b.value}
+              onClick={() => { setMcapBucket(b.value); setPage(1); }}
+              className={`px-2.5 py-1 rounded-full text-xs transition-colors ${
+                mcapBucket === b.value
+                  ? "bg-white/15 text-foreground font-medium border border-white/20"
+                  : "bg-white/5 text-muted-foreground hover:text-foreground hover:bg-white/10 border border-transparent"
+              }`}
+            >
+              {b.label}
+            </button>
+          ))}
+          <div className="w-px h-4 bg-white/10 mx-1" />
+          <button
+            onClick={() => { setMyVotesOnly((v) => !v); setPage(1); }}
+            className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs transition-colors ${
+              myVotesOnly
+                ? "bg-purple-500/20 text-purple-400 border border-purple-500/30 font-medium"
+                : "bg-white/5 text-muted-foreground hover:text-foreground hover:bg-white/10 border border-transparent"
+            }`}
+          >
+            <Star className={`h-3 w-3 ${myVotesOnly ? "fill-purple-400" : ""}`} />
+            My Votes{userVotes.size > 0 && ` (${userVotes.size})`}
+          </button>
+        </div>
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
