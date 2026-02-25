@@ -1,4 +1,4 @@
-export type SolanaStatus = "none" | "wrapped_only";
+export type SolanaStatus = "none" | "wrapped" | "wrapped_only";
 
 export interface DiscoveryToken {
   rank: number;
@@ -11,6 +11,7 @@ export interface DiscoveryToken {
   change7d: number;
   originChains: string[];
   solanaStatus: SolanaStatus;
+  solanaMint?: string;
 }
 
 export interface DiscoveryResponse {
