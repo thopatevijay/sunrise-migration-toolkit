@@ -1,5 +1,6 @@
 import { cache, TTL } from "./providers/cache";
 import { trackedFetch } from "./providers/health";
+import { fetchJupiterTokenMap } from "./providers/jupiter";
 import type { DiscoveryToken } from "@/lib/types/discovery";
 
 const BASE = "https://api.coingecko.com/api/v3";
@@ -169,6 +170,16 @@ export async function fetchNoSolanaTokens(): Promise<DiscoveryToken[]> {
       originChains,
       solanaStatus: "none",
     });
+  }
+
+  // Cross-reference with Jupiter to detect wrapped/bridged Solana presence
+  const jupiterMap = await fetchJupiterTokenMap();
+  for (const token of results) {
+    const jupToken = jupiterMap.get(token.symbol);
+    if (jupToken) {
+      token.solanaStatus = "wrapped";
+      token.solanaMint = jupToken.mint;
+    }
   }
 
   cache.set(cacheKey, results, TTL.TOKEN_DISCOVERY);
