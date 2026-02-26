@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useDiscovery } from "@/hooks/use-discovery";
 import { DiscoveryTable } from "@/components/dashboard/discovery-table";
 import { Info, X } from "lucide-react";
+import { AskTideshift } from "@/components/token-detail/ask-tideshift";
 
 export default function DiscoveryPage() {
   const { tokens, totalFound, cachedAt, isLoading } = useDiscovery();
@@ -49,6 +50,7 @@ export default function DiscoveryPage() {
       )}
 
       <DiscoveryTable tokens={tokens} isLoading={isLoading} />
+      <AskTideshift />
     </div>
   );
 }

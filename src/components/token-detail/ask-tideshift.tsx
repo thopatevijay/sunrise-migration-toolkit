@@ -9,24 +9,34 @@ import { Sparkles, X, Send, Loader2, AlertCircle, RefreshCw } from "lucide-react
 import { Button } from "@/components/ui/button";
 
 interface AskTideshiftProps {
-  tokenId: string;
-  tokenSymbol: string;
+  tokenId?: string;
+  tokenSymbol?: string;
 }
 
-const SUGGESTED_PROMPTS = [
+const TOKEN_PROMPTS = [
   { label: "Why migrate?", prompt: "Why should Sunrise migrate this token to Solana?" },
   { label: "Biggest risks?", prompt: "What are the biggest risks of migrating this token?" },
   { label: "Bridge strategy", prompt: "What bridge framework should be used and why?" },
   { label: "Explain demand", prompt: "Explain the demand evidence for this token" },
 ];
 
+const DISCOVERY_PROMPTS = [
+  { label: "Top priorities?", prompt: "Which tokens should Sunrise prioritize for migration and why?" },
+  { label: "Strongest signals?", prompt: "What are the strongest demand signals across all candidates?" },
+  { label: "Compare top 3", prompt: "Compare the top 3 migration candidates side by side" },
+  { label: "Low risk picks?", prompt: "Which tokens have the lowest risk and highest demand?" },
+];
+
 export function AskTideshift({ tokenId, tokenSymbol }: AskTideshiftProps) {
+  const isDiscovery = !tokenId;
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  const SUGGESTED_PROMPTS = isDiscovery ? DISCOVERY_PROMPTS : TOKEN_PROMPTS;
+
   const transport = useMemo(
-    () => new DefaultChatTransport({ api: "/api/ai/chat", body: { tokenId } }),
+    () => new DefaultChatTransport({ api: "/api/ai/chat", body: tokenId ? { tokenId } : {} }),
     [tokenId]
   );
 
@@ -90,7 +100,7 @@ export function AskTideshift({ tokenId, tokenSymbol }: AskTideshiftProps) {
                 <Sparkles className="h-4 w-4 text-white" />
                 <span className="text-sm font-semibold text-white">Ask Tideshift</span>
                 <span className="text-[10px] text-white/70 bg-white/15 px-1.5 py-0.5 rounded">
-                  {tokenSymbol}
+                  {isDiscovery ? "Discovery" : tokenSymbol}
                 </span>
               </div>
               <button
@@ -107,8 +117,9 @@ export function AskTideshift({ tokenId, tokenSymbol }: AskTideshiftProps) {
                 <div className="flex flex-col items-center gap-4 pt-6">
                   <Sparkles className="h-8 w-8 text-primary/40" />
                   <p className="text-xs text-muted-foreground text-center max-w-[280px]">
-                    Ask about {tokenSymbol}&apos;s migration potential, demand signals,
-                    bridge strategy, or compare with other tokens.
+                    {isDiscovery
+                      ? "Ask about migration candidates, demand signals, prioritization, or compare tokens across the discovery pipeline."
+                      : `Ask about ${tokenSymbol}'s migration potential, demand signals, bridge strategy, or compare with other tokens.`}
                   </p>
                   <div className="grid grid-cols-2 gap-2 w-full">
                     {SUGGESTED_PROMPTS.map((sp) => (
@@ -186,7 +197,7 @@ export function AskTideshift({ tokenId, tokenSymbol }: AskTideshiftProps) {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder={`Ask about ${tokenSymbol}...`}
+                  placeholder={isDiscovery ? "Ask about migration candidates..." : `Ask about ${tokenSymbol}...`}
                   className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/30"
                   disabled={isLoading}
                 />
