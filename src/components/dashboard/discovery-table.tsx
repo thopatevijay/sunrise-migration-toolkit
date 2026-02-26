@@ -595,20 +595,35 @@ export function DiscoveryTable({ tokens, isLoading }: DiscoveryTableProps) {
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
                     {token.solanaStatus === "wrapped" ? (
-                      <a
-                        href={`https://orbmarkets.io/token/${token.solanaMint}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                        className="inline-block"
-                      >
-                        <Badge
-                          variant="outline"
-                          className="text-[10px] border-amber-500/30 text-amber-400 hover:bg-amber-500/10 transition-colors cursor-pointer"
+                      <div className="flex items-center gap-1.5">
+                        <a
+                          href={`https://orbmarkets.io/token/${token.solanaMint}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="inline-block"
+                          title="View on Orb Markets"
                         >
-                          Bridged ↗
-                        </Badge>
-                      </a>
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] border-amber-500/30 text-amber-400 hover:bg-amber-500/10 transition-colors cursor-pointer"
+                          >
+                            Bridged ↗
+                          </Badge>
+                        </a>
+                        {token.solanaLiquidity ? (
+                          <a
+                            href={`https://jup.ag/tokens/${token.solanaMint}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-[10px] text-amber-400/70 hover:text-amber-400 transition-colors"
+                            title="View on Jupiter"
+                          >
+                            {formatUSD(token.solanaLiquidity)} ↗
+                          </a>
+                        ) : null}
+                      </div>
                     ) : (
                       <Badge
                         variant="outline"

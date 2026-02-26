@@ -206,6 +206,7 @@ export async function fetchNoSolanaTokens(): Promise<DiscoveryToken[]> {
     if (jupToken && isLikelyBridgedMatch(token.name, jupToken.name)) {
       token.solanaStatus = "wrapped";
       token.solanaMint = jupToken.mint;
+      token.solanaLiquidity = jupToken.liquidity;
     }
   }
 

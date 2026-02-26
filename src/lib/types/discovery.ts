@@ -12,6 +12,7 @@ export interface DiscoveryToken {
   originChains: string[];
   solanaStatus: SolanaStatus;
   solanaMint?: string;
+  solanaLiquidity?: number;
 }
 
 export interface DiscoveryResponse {

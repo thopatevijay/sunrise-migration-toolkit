@@ -38,6 +38,7 @@ export interface JupiterTokenInfo {
   mint: string;
   symbol: string;
   name: string;
+  liquidity: number;
 }
 
 /**
@@ -66,7 +67,7 @@ export async function fetchJupiterTokenMap(): Promise<Map<string, JupiterTokenIn
       const key = token.symbol.toUpperCase();
       // Keep the first match per symbol (API returns popular tokens first)
       if (!map.has(key)) {
-        map.set(key, { mint: token.id, symbol: token.symbol, name: token.name });
+        map.set(key, { mint: token.id, symbol: token.symbol, name: token.name, liquidity: token.liquidity ?? 0 });
       }
     }
 
