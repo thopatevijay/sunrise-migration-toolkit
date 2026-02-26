@@ -3,20 +3,23 @@
 import { useState } from "react";
 import { useDiscovery } from "@/hooks/use-discovery";
 import { DiscoveryTable } from "@/components/dashboard/discovery-table";
-import { Info, X } from "lucide-react";
+import { Info, X, Bot } from "lucide-react";
 import { AskTideshift } from "@/components/token-detail/ask-tideshift";
+import { MigrationScout } from "@/components/dashboard/migration-scout";
 
 export default function DiscoveryPage() {
   const { tokens, totalFound, cachedAt, isLoading } = useDiscovery();
   const [showBanner, setShowBanner] = useState(true);
+  const [scoutOpen, setScoutOpen] = useState(false);
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold">
-          <span className="gradient-text">Token Discovery</span>
-        </h2>
-        <p className="text-sm text-muted-foreground mt-1">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold">
+            <span className="gradient-text">Token Discovery</span>
+          </h2>
+          <p className="text-sm text-muted-foreground mt-1">
           {totalFound > 0
             ? `${totalFound} of top 500 tokens by market cap lack a native Solana contract address`
             : "Scanning top 500 tokens by market cap for Solana migration opportunities"}
@@ -26,6 +29,14 @@ export default function DiscoveryPage() {
             </span>
           )}
         </p>
+        </div>
+        <button
+          onClick={() => setScoutOpen(true)}
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-cyan-500 text-white text-sm font-medium hover:opacity-90 transition-opacity shrink-0"
+        >
+          <Bot className="h-4 w-4" />
+          Run Scout
+        </button>
       </div>
 
       {showBanner && (
@@ -51,6 +62,7 @@ export default function DiscoveryPage() {
 
       <DiscoveryTable tokens={tokens} isLoading={isLoading} />
       <AskTideshift />
+      <MigrationScout open={scoutOpen} onOpenChange={setScoutOpen} />
     </div>
   );
 }
