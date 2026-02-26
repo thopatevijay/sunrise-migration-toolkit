@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useDiscovery } from "@/hooks/use-discovery";
 import { DiscoveryTable } from "@/components/dashboard/discovery-table";
 import { Info, X, Bot } from "lucide-react";
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import { MigrationScout } from "@/components/dashboard/migration-scout";
 
 export default function DiscoveryPage() {
@@ -12,6 +13,7 @@ export default function DiscoveryPage() {
   const [scoutOpen, setScoutOpen] = useState(false);
 
   return (
+    <TooltipProvider delayDuration={300}>
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
@@ -29,13 +31,18 @@ export default function DiscoveryPage() {
           )}
         </p>
         </div>
-        <button
-          onClick={() => setScoutOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-cyan-500 text-white text-sm font-medium hover:opacity-90 transition-opacity shrink-0"
-        >
-          <Bot className="h-4 w-4" />
-          Run Scout
-        </button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={() => setScoutOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-cyan-500 text-white text-sm font-medium hover:opacity-90 transition-opacity shrink-0"
+            >
+              <Bot className="h-4 w-4" />
+              Run Scout
+            </button>
+          </TooltipTrigger>
+          <TooltipContent>AI agent that analyzes top candidates and produces a migration brief</TooltipContent>
+        </Tooltip>
       </div>
 
       {showBanner && (
@@ -62,5 +69,6 @@ export default function DiscoveryPage() {
       <DiscoveryTable tokens={tokens} isLoading={isLoading} />
       <MigrationScout open={scoutOpen} onOpenChange={setScoutOpen} tokens={tokens} />
     </div>
+    </TooltipProvider>
   );
 }

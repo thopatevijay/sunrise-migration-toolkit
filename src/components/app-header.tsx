@@ -26,7 +26,7 @@ function formatTimeAgo(isoDate: string): string {
   return `${Math.floor(mins / 60)}h ago`;
 }
 
-export function AppHeader({ lastUpdated, dataSource }: AppHeaderProps) {
+export function AppHeader({ lastUpdated}: AppHeaderProps) {
   const pathname = usePathname();
 
   const title =
@@ -49,7 +49,6 @@ export function AppHeader({ lastUpdated, dataSource }: AppHeaderProps) {
             </TooltipTrigger>
             <TooltipContent>
               <p>Data last refreshed: {new Date(lastUpdated).toLocaleTimeString()}</p>
-              {dataSource && <p className="text-xs text-muted-foreground">Source: {dataSource}</p>}
             </TooltipContent>
           </Tooltip>
         )}

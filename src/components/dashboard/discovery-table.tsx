@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { TrendIndicator } from "@/components/shared/trend-indicator";
 import { MdsBadge } from "@/components/shared/mds-badge";
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import { formatUSD } from "@/lib/utils";
 import type { DiscoveryToken } from "@/lib/types/discovery";
 import {
@@ -428,6 +429,7 @@ export function DiscoveryTable({ tokens, isLoading }: DiscoveryTableProps) {
   }
 
   return (
+    <TooltipProvider delayDuration={300}>
     <Card className="glass-card">
       <CardHeader className="pb-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -460,14 +462,18 @@ export function DiscoveryTable({ tokens, isLoading }: DiscoveryTableProps) {
                 className="pl-8 h-9 w-52 bg-white/5 border-white/10 text-sm"
               />
             </div>
-            <button
-              onClick={() => downloadCSV(filtered)}
-              className="flex items-center gap-1.5 h-9 px-3 rounded-md bg-white/5 border border-white/10 text-sm text-muted-foreground hover:text-foreground hover:bg-white/10 transition-colors"
-              title="Download CSV"
-            >
-              <Download className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">CSV</span>
-            </button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => downloadCSV(filtered)}
+                  className="flex items-center gap-1.5 h-9 px-3 rounded-md bg-white/5 border border-white/10 text-sm text-muted-foreground hover:text-foreground hover:bg-white/10 transition-colors"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">CSV</span>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Export filtered tokens as CSV</TooltipContent>
+            </Tooltip>
           </div>
         </div>
       </CardHeader>
@@ -516,17 +522,22 @@ export function DiscoveryTable({ tokens, isLoading }: DiscoveryTableProps) {
             </button>
           ))}
           <div className="w-px h-4 bg-white/10 mx-1" />
-          <button
-            onClick={() => { setMyVotesOnly((v) => !v); setPage(1); }}
-            className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs transition-colors ${
-              myVotesOnly
-                ? "bg-purple-500/20 text-purple-400 border border-purple-500/30 font-medium"
-                : "bg-white/5 text-muted-foreground hover:text-foreground hover:bg-white/10 border border-transparent"
-            }`}
-          >
-            <Star className={`h-3 w-3 ${myVotesOnly ? "fill-purple-400" : ""}`} />
-            My Votes{userVotes.size > 0 && ` (${userVotes.size})`}
-          </button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => { setMyVotesOnly((v) => !v); setPage(1); }}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs transition-colors ${
+                  myVotesOnly
+                    ? "bg-purple-500/20 text-purple-400 border border-purple-500/30 font-medium"
+                    : "bg-white/5 text-muted-foreground hover:text-foreground hover:bg-white/10 border border-transparent"
+                }`}
+              >
+                <Star className={`h-3 w-3 ${myVotesOnly ? "fill-purple-400" : ""}`} />
+                My Votes{userVotes.size > 0 && ` (${userVotes.size})`}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>Show only tokens you&apos;ve voted for</TooltipContent>
+          </Tooltip>
           <div className="w-px h-4 bg-white/10 mx-1" />
           {(["all", "wrapped", "none"] as const).map((status) => (
             <button
@@ -627,51 +638,70 @@ export function DiscoveryTable({ tokens, isLoading }: DiscoveryTableProps) {
                     <TrendIndicator value={token.change7d} />
                   </TableCell>
                   <TableCell>
-                    <button
-                      onClick={(e) => handleVote(e, token.coingeckoId)}
-                      className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs transition-colors ${
-                        userVotes.has(token.coingeckoId)
-                          ? "bg-purple-500/20 text-purple-400 border border-purple-500/30"
-                          : "bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-foreground border border-transparent"
-                      }`}
-                    >
-                      <ChevronUp className={`h-3.5 w-3.5 ${userVotes.has(token.coingeckoId) ? "text-purple-400" : ""}`} />
-                      <span className="font-mono">{voteCounts[token.coingeckoId] ?? 0}</span>
-                    </button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          onClick={(e) => handleVote(e, token.coingeckoId)}
+                          className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs transition-colors ${
+                            userVotes.has(token.coingeckoId)
+                              ? "bg-purple-500/20 text-purple-400 border border-purple-500/30"
+                              : "bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-foreground border border-transparent"
+                          }`}
+                        >
+                          <ChevronUp className={`h-3.5 w-3.5 ${userVotes.has(token.coingeckoId) ? "text-purple-400" : ""}`} />
+                          <span className="font-mono">{voteCounts[token.coingeckoId] ?? 0}</span>
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent>{userVotes.has(token.coingeckoId) ? "Remove your vote" : "Vote to signal migration demand"}</TooltipContent>
+                    </Tooltip>
                   </TableCell>
                   <TableCell>
-                    {scores[token.coingeckoId] !== undefined ? (
-                      <MdsBadge score={scores[token.coingeckoId]} size="sm" />
-                    ) : (
-                      <button
-                        onClick={(e) => handleScore(e, token)}
-                        disabled={scoringIds.has(token.coingeckoId)}
-                        className="flex items-center gap-1 px-2 py-1 rounded-md text-xs bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-foreground border border-white/10 transition-colors disabled:opacity-50"
-                      >
-                        {scoringIds.has(token.coingeckoId) ? (
-                          <Loader2 className="h-3 w-3 animate-spin" />
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        {scores[token.coingeckoId] !== undefined ? (
+                          <span><MdsBadge score={scores[token.coingeckoId]} size="sm" /></span>
                         ) : (
-                          <Zap className="h-3 w-3" />
+                          <button
+                            onClick={(e) => handleScore(e, token)}
+                            disabled={scoringIds.has(token.coingeckoId)}
+                            className="flex items-center gap-1 px-2 py-1 rounded-md text-xs bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-foreground border border-white/10 transition-colors disabled:opacity-50"
+                          >
+                            {scoringIds.has(token.coingeckoId) ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <Zap className="h-3 w-3" />
+                            )}
+                            <span>{scoringIds.has(token.coingeckoId) ? "Scoring..." : "Score"}</span>
+                          </button>
                         )}
-                        <span>{scoringIds.has(token.coingeckoId) ? "Scoring..." : "Score"}</span>
-                      </button>
-                    )}
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {scores[token.coingeckoId] !== undefined
+                          ? `MDS ${scores[token.coingeckoId].toFixed(1)}/100 — migration demand score`
+                          : "Calculate Migration Demand Score for this token"}
+                      </TooltipContent>
+                    </Tooltip>
                   </TableCell>
                   <TableCell className="relative">
-                    <button
-                      onClick={(e) => handleSummary(e, token.coingeckoId)}
-                      className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs transition-colors ${
-                        activeSummaryId === token.coingeckoId && summaries[token.coingeckoId]
-                          ? "bg-purple-500/20 text-purple-400 border border-purple-500/30"
-                          : "bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-foreground border border-white/10"
-                      }`}
-                    >
-                      {summaryLoadingIds.has(token.coingeckoId) ? (
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                      ) : (
-                        <Sparkles className="h-3 w-3" />
-                      )}
-                    </button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          onClick={(e) => handleSummary(e, token.coingeckoId)}
+                          className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs transition-colors ${
+                            activeSummaryId === token.coingeckoId && summaries[token.coingeckoId]
+                              ? "bg-purple-500/20 text-purple-400 border border-purple-500/30"
+                              : "bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-foreground border border-white/10"
+                          }`}
+                        >
+                          {summaryLoadingIds.has(token.coingeckoId) ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Sparkles className="h-3 w-3" />
+                          )}
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent>Get AI summary of migration potential</TooltipContent>
+                    </Tooltip>
                     {activeSummaryId === token.coingeckoId && (summaries[token.coingeckoId] || summaryLoadingIds.has(token.coingeckoId)) && (
                       <div
                         className="absolute z-50 top-full left-0 mt-1 w-[280px] rounded-lg border border-white/10 bg-background shadow-xl p-3"
@@ -721,45 +751,65 @@ export function DiscoveryTable({ tokens, isLoading }: DiscoveryTableProps) {
                   <TableCell className="hidden md:table-cell">
                     {token.solanaStatus === "wrapped" ? (
                       <div className="flex items-center gap-1.5">
-                        <a
-                          href={`https://orbmarkets.io/token/${token.solanaMint}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="inline-block"
-                          title="View on Orb Markets"
-                        >
-                          <Badge
-                            variant="outline"
-                            className="text-[10px] border-amber-500/30 text-amber-400 hover:bg-amber-500/10 transition-colors cursor-pointer"
-                          >
-                            Bridged ↗
-                          </Badge>
-                        </a>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <a
+                              href={`https://orbmarkets.io/token/${token.solanaMint}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="inline-block"
+                            >
+                              <Badge
+                                variant="outline"
+                                className="text-[10px] border-amber-500/30 text-amber-400 hover:bg-amber-500/10 transition-colors cursor-pointer"
+                              >
+                                Bridged ↗
+                              </Badge>
+                            </a>
+                          </TooltipTrigger>
+                          <TooltipContent>Wrapped version exists on Solana via bridge — not a native token. View on Orb Markets.</TooltipContent>
+                        </Tooltip>
                         {token.solanaLiquidity ? (
-                          <a
-                            href={`https://jup.ag/tokens/${token.solanaMint}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={(e) => e.stopPropagation()}
-                            className="text-[10px] text-amber-400/70 hover:text-amber-400 transition-colors"
-                            title="View on Jupiter"
-                          >
-                            {formatUSD(token.solanaLiquidity)} ↗
-                          </a>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <a
+                                href={`https://jup.ag/tokens/${token.solanaMint}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="text-[10px] text-amber-400/70 hover:text-amber-400 transition-colors"
+                              >
+                                {formatUSD(token.solanaLiquidity)} ↗
+                              </a>
+                            </TooltipTrigger>
+                            <TooltipContent>Solana-side liquidity on Jupiter DEX</TooltipContent>
+                          </Tooltip>
                         ) : null}
                       </div>
                     ) : (
-                      <Badge
-                        variant="outline"
-                        className="text-[10px] border-red-500/30 text-red-400"
-                      >
-                        Not on Solana
-                      </Badge>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span>
+                            <Badge
+                              variant="outline"
+                              className="text-[10px] border-red-500/30 text-red-400"
+                            >
+                              Not on Solana
+                            </Badge>
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent>No native or bridged presence on Solana — strong migration candidate</TooltipContent>
+                      </Tooltip>
                     )}
                   </TableCell>
                   <TableCell className="w-8 pr-4">
-                    <ExternalLink className="h-3.5 w-3.5 text-muted-foreground/40 group-hover:text-muted-foreground transition-colors" />
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span><ExternalLink className="h-3.5 w-3.5 text-muted-foreground/40 group-hover:text-muted-foreground transition-colors" /></span>
+                      </TooltipTrigger>
+                      <TooltipContent>View on CoinGecko</TooltipContent>
+                    </Tooltip>
                   </TableCell>
                 </TableRow>
               ))}
@@ -807,5 +857,6 @@ export function DiscoveryTable({ tokens, isLoading }: DiscoveryTableProps) {
         )}
       </CardContent>
     </Card>
+    </TooltipProvider>
   );
 }
