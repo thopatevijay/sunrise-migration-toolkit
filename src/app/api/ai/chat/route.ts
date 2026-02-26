@@ -2,7 +2,7 @@ import { streamText, tool, convertToModelMessages, stepCountIs } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 import { NextResponse } from "next/server";
-import { getTokenDetail } from "@/lib/data";
+import { getTokenDetail, getTokenCandidates } from "@/lib/data";
 import { serializeTokenForAI } from "@/lib/ai/serialize";
 import { CHAT_SYSTEM_PROMPT } from "@/lib/ai/prompts";
 
@@ -131,6 +131,37 @@ export async function POST(request: Request) {
           }
 
           return details;
+        },
+      }),
+      getTopCandidates: tool({
+        description:
+          "Fetch the top migration candidates ranked by MDS score. Use this when the user asks about prioritization, top tokens, or pipeline-level questions like 'which tokens should Sunrise migrate?'",
+        inputSchema: z.object({
+          limit: z
+            .number()
+            .min(1)
+            .max(10)
+            .default(5)
+            .describe("Number of top candidates to return (default 5, max 10)"),
+        }),
+        execute: async ({ limit }) => {
+          const candidates = await getTokenCandidates();
+          const top = candidates.slice(0, limit);
+          return {
+            count: candidates.length,
+            candidates: top.map((t) => ({
+              id: t.id,
+              symbol: t.symbol,
+              name: t.name,
+              originChain: t.originChain,
+              mdsScore: t.mds.totalScore.toFixed(1),
+              trend: t.mds.trend,
+              confidence: `${(t.mds.confidence * 100).toFixed(0)}%`,
+              marketCap: t.marketCap,
+              volume24h: t.volume24h,
+              bridgeVolume7d: t.bridgeVolume7d,
+            })),
+          };
         },
       }),
     },

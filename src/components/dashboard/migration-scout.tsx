@@ -57,8 +57,8 @@ export function MigrationScout({ open, onOpenChange }: MigrationScoutProps) {
             <div className="text-center space-y-2">
               <p className="text-sm font-medium">Migration Scout</p>
               <p className="text-xs text-muted-foreground max-w-md">
-                Autonomously analyzes the top 10 migration candidates and produces a
-                ranked Migration Brief with recommendations, risk flags, and priority actions.
+                Analyzes the top 10 migration candidates by MDS score and recommends
+                the best 5 with risk flags, surging demand signals, and a priority action.
               </p>
             </div>
             <Button
