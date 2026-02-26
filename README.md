@@ -68,6 +68,9 @@ Scans the top 500 tokens by market cap on CoinGecko and cross-references platfor
 - **CSV export** — download the full filtered dataset with CoinGecko URLs for Sunrise BD team analysis
 - **Community demand voting** — persistent upvotes via Upstash Redis (anonymous, one vote per token per user)
 - **On-demand MDS scoring** — score any token in real time from the table
+- **Quick AI Summary** — one-click sparkle button per row generates a 2-3 sentence AI assessment of migration potential
+- **Migration Scout Agent** — autonomous AI agent analyzes top 15 candidates and produces a ranked Migration Brief with recommendations, risk flags, and priority actions
+- **Tooltips** — contextual tooltips on all interactive elements (demand votes, scores, AI, badges, links)
 - **Methodology banner** — transparent explanation of filtering criteria
 
 ### Part 2: Demand Discovery Dashboard
@@ -91,6 +94,7 @@ Dynamically scores the **top 50 non-Solana tokens** (by market cap) using 5 real
 - **On-demand MDS scoring** — score any Discovery token in real time from the table
 - **AI-powered proposals** — GPT-4o-mini streaming analysis in 3 tones (Executive, Technical, Community) with classic rule-based fallback
 - **Ask Tideshift chat** — conversational AI assistant on every token detail page with tool-calling (fetches live token data, compares tokens, explains signals)
+- **Client-side data passing** — AI features use already-fetched page data instead of re-fetching from APIs, cutting response times from ~60s to ~5s
 
 **Who uses this:** Sunrise team, to prioritize which tokens to bring next. Token teams, to see if demand exists before applying.
 
@@ -171,7 +175,7 @@ Currently live for: RENDER, HNT, POWR, GEOD
 | TVL & protocols | DefiLlama | Protocol TVL, Solana TVL ratios, chain bridge volumes |
 | DeFi yields | DefiLlama Yields | Live APYs for Kamino, MarginFi, Raydium, Orca, Drift, Sanctum, Jupiter |
 | Token listing + liquidity | Jupiter | Verified token list, bridged token detection, Solana liquidity data |
-| AI analysis | OpenAI (GPT-4o-mini) | Streaming proposal generation (3 tones), chat with tool-calling |
+| AI analysis | OpenAI (GPT-4o-mini) | Streaming proposals (3 tones), chat with tool-calling, quick summaries, Migration Scout agent |
 | Holder counts | Helius DAS API | Real SPL token holder counts for Solana-listed tokens |
 | Wallet overlap | Heuristic + DefiLlama | Chain proximity + bridge data + protocol TVL ratios |
 | Onboarding analytics | Upstash Redis | Real funnel conversion tracking (Redis SETs, auto-deduplicated) |
@@ -209,6 +213,8 @@ Currently live for: RENDER, HNT, POWR, GEOD
 | No community input | Persistent community demand voting via Upstash Redis |
 | Manual proposal writing | AI-powered proposals in 3 tones + classic rule-based fallback |
 | No conversational analysis | Ask Tideshift: AI chat with tool-calling on every token page |
+| No quick token assessment | Quick AI Summary: one-click 2-3 sentence assessment per Discovery row |
+| No autonomous pipeline analysis | Migration Scout: AI agent produces ranked migration briefs on demand |
 | No post-migration tracking | Migration Health Monitor with health scores and trend data |
 | Community left to figure it out | Guided onboarding for 4 tokens with live DeFi APYs |
 | No post-migration metrics | Conversion analytics at every step |
@@ -268,7 +274,7 @@ Tideshift turns Sunrise's migration pipeline from a series of one-off efforts in
 | Layer | Technology |
 |-------|-----------|
 | Frontend | Next.js 14, Tailwind CSS, Recharts, shadcn/ui, Framer Motion |
-| AI Layer | Vercel AI SDK + GPT-4o-mini (streaming proposals, chat with tool-calling) |
+| AI Layer | Vercel AI SDK + GPT-4o-mini (streaming proposals, chat with tool-calling, quick summaries, Migration Scout agent) |
 | Data Fetching | SWR (auto-refresh), server-side TTL cache |
 | APIs (Free, no auth) | WormholeScan, DefiLlama, DexScreener |
 | APIs (Free, key required) | CoinGecko (market + social), Jupiter (bridged token detection + liquidity), Helius (holder counts), OpenAI (AI analysis) |
@@ -353,7 +359,7 @@ The app runs entirely on live API data from 8 providers. The Discovery page surf
 | Page | URL | Description |
 |------|-----|-------------|
 | Dashboard | [/](https://tideshift.vercel.app/) | 50 dynamically scored tokens, MDS rankings, bridge outflow charts |
-| Discovery | [/discovery](https://tideshift.vercel.app/discovery) | ~300 tokens, demand voting, on-demand MDS scoring, CSV export |
+| Discovery | [/discovery](https://tideshift.vercel.app/discovery) | ~300 tokens, demand voting, MDS scoring, AI summaries, Migration Scout, CSV export |
 | Token Detail | [/tokens/tether-gold](https://tideshift.vercel.app/tokens/tether-gold) | Radar chart, signal analysis, price chart, AI proposal builder, Ask Tideshift chat |
 | Migrations | [/migrations](https://tideshift.vercel.app/migrations) | Post-migration health monitor for RENDER, HNT, POWR, GEOD |
 | Proposals | [/proposals](https://tideshift.vercel.app/proposals) | Saved migration proposals with copy/share |

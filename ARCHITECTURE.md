@@ -53,7 +53,9 @@ src/
 │       │   └── user/route.ts         # GET /api/votes/user (per-user vote history)
 │       ├── ai/
 │       │   ├── proposal/route.ts     # POST /api/ai/proposal (streaming AI proposal, 3 tones)
-│       │   └── chat/route.ts         # POST /api/ai/chat (chat with tool-calling)
+│       │   ├── chat/route.ts         # POST /api/ai/chat (chat with tool-calling)
+│       │   ├── quick-summary/route.ts # POST /api/ai/quick-summary (non-streaming 2-3 sentence assessment)
+│       │   └── scout/route.ts        # POST /api/ai/scout (streaming Migration Scout agent brief)
 │       ├── analytics/
 │       │   └── onboarding/route.ts   # GET/POST /api/analytics/onboarding (Redis-backed funnel)
 │       └── yields/
@@ -63,7 +65,8 @@ src/
 │   │   ├── stats-bar.tsx             # 4 KPI cards with animated counters
 │   │   ├── token-table.tsx           # Ranked, sortable, filterable token table
 │   │   ├── demand-chart.tsx          # Tabbed charts (bridge outflows, search, MDS)
-│   │   ├── discovery-table.tsx        # Non-Solana token table (pagination, CSV, demand votes, MDS scoring)
+│   │   ├── discovery-table.tsx        # Non-Solana token table (pagination, CSV, votes, MDS scoring, AI summaries, tooltips)
+│   │   ├── migration-scout.tsx       # Migration Scout agent dialog (streaming markdown brief)
 │   │   ├── migration-health-card.tsx # Per-token health card (score ring, sparkline, metrics)
 │   │   ├── migrated-banner.tsx       # Horizontal scroll of migrated tokens + health link
 │   │   ├── sparkline.tsx             # Tiny inline trend chart
@@ -421,7 +424,7 @@ Auto-generates structured migration analysis from token data:
 
 ## AI Integration
 
-Tideshift uses the Vercel AI SDK (`ai` + `@ai-sdk/openai`) with GPT-4o-mini for two features:
+Tideshift uses the Vercel AI SDK (`ai` + `@ai-sdk/openai`) with GPT-4o-mini for four features:
 
 ### AI Proposal Generation
 
@@ -441,11 +444,12 @@ Tideshift uses the Vercel AI SDK (`ai` + `@ai-sdk/openai`) with GPT-4o-mini for 
 
 ### Ask Tideshift Chat
 
-`POST /api/ai/chat` accepts `{ messages, tokenId }` and:
+`POST /api/ai/chat` accepts `{ messages, tokenId, tokenData }` and:
 1. Converts UIMessages to ModelMessages via `convertToModelMessages()`
 2. Injects token context into system prompt (so "this token" resolves correctly)
-3. Streams response with `stopWhen: stepCountIs(3)` for multi-step tool execution
-4. Returns `toUIMessageStreamResponse()` for `useChat` compatibility
+3. If `tokenData` is provided (pre-serialized from client), injects it directly into the system prompt — the AI answers immediately without tool calls (~2-7s vs ~60s)
+4. Streams response with `stopWhen: stepCountIs(3)` for multi-step tool execution
+5. Returns `toUIMessageStreamResponse()` for `useChat` compatibility
 
 **Tools available to the AI:**
 | Tool | Description |
@@ -453,8 +457,31 @@ Tideshift uses the Vercel AI SDK (`ai` + `@ai-sdk/openai`) with GPT-4o-mini for 
 | `getTokenData(tokenId)` | Fetch full migration data for any token |
 | `compareTokens(tokenIdA, tokenIdB)` | Side-by-side MDS comparison |
 | `explainSignal(tokenId, signal)` | Deep-dive into a specific MDS signal |
+| `getTopCandidates(limit)` | Fetch top migration candidates ranked by MDS score |
 
 **Scope enforcement:** The system prompt restricts responses to migration analysis and Solana ecosystem topics. Off-topic questions (general knowledge, math, etc.) are politely declined.
+
+### Quick AI Summary
+
+`POST /api/ai/quick-summary` accepts `{ coingeckoId }` and:
+1. Fetches `TokenDetail` server-side via `getTokenDetail()`
+2. Serializes via `serializeTokenForAI()`
+3. Uses `generateText()` (non-streaming) with `maxOutputTokens: 150`, temperature 0.3
+4. Returns `{ summary: string }` — a 2-3 sentence migration assessment
+5. Results cached in-memory for 10 minutes per token
+
+**UI:** Sparkle button in the AI column of the Discovery table. Shows a popover with the summary below the button.
+
+### Migration Scout Agent
+
+`POST /api/ai/scout` accepts `{ tokens }` (top 15 `DiscoveryToken[]` from client) and:
+1. Serializes each token with a lightweight `serializeDiscoveryToken()` (rank, market cap, volume, 7d change, chains, Solana status)
+2. Streams response via `streamText()` with `toTextStreamResponse()`
+3. System prompt structures output as: Executive Summary → Top 5 Recommendations → Surging Demand → Risk Flags → This Week's Priority
+
+**UI:** "Run Scout" gradient button on Discovery page → opens a dialog modal with streaming markdown output. Uses `useCompletion` with `streamProtocol: "text"`.
+
+**Client-side data passing:** Scout receives token data from the client POST body (same data already fetched for the Discovery table), avoiding redundant API calls. Response time: ~18s.
 
 ## API Health Board
 

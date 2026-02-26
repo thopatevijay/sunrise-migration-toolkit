@@ -8,6 +8,8 @@ import {
   Filter,
   ExternalLink,
   Link,
+  Sparkles,
+  Bot,
 } from "lucide-react";
 import { DocsSection } from "@/components/docs/docs-section";
 import { DocsCallout } from "@/components/docs/docs-callout";
@@ -224,6 +226,95 @@ export function DiscoverySection() {
             <Badge className="text-[10px] px-1.5 py-0">MDS 72</Badge> inline
           </span>
         </div>
+      </div>
+
+      {/* Quick AI Summary */}
+      <div>
+        <h3 className="text-base font-semibold mb-3">
+          <span className="inline-flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-primary" />
+            Quick AI Summary
+          </span>
+        </h3>
+        <p className="text-sm text-muted-foreground leading-relaxed mb-3">
+          Get a one-click AI assessment of any token&apos;s migration potential
+          directly from the discovery table.
+        </p>
+        <div className="space-y-2">
+          {[
+            {
+              icon: Sparkles,
+              text: "Click the sparkle icon in the AI column next to any token",
+            },
+            {
+              icon: Sparkles,
+              text: "AI fetches the token's full signal data and generates a 2-3 sentence assessment",
+            },
+            {
+              icon: Sparkles,
+              text: "Summary appears in a popover below the button — covers strongest signal, biggest risk, and a verdict (strong/moderate/weak)",
+            },
+            {
+              icon: Sparkles,
+              text: "Results are cached for 10 minutes per token to avoid redundant API calls",
+            },
+          ].map((item, i) => (
+            <div
+              key={i}
+              className="flex items-start gap-3 text-sm text-muted-foreground"
+            >
+              <item.icon className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+              <span>{item.text}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Migration Scout Agent */}
+      <div>
+        <h3 className="text-base font-semibold mb-3">
+          <span className="inline-flex items-center gap-2">
+            <Bot className="h-4 w-4 text-primary" />
+            Migration Scout Agent
+          </span>
+        </h3>
+        <p className="text-sm text-muted-foreground leading-relaxed mb-3">
+          An autonomous AI agent that analyzes the top migration candidates and
+          produces a structured Migration Brief for the Sunrise BD team.
+        </p>
+        <div className="space-y-2">
+          {[
+            {
+              icon: Bot,
+              text: 'Click "Run Scout" (gradient button at the top of the Discovery page)',
+            },
+            {
+              icon: Bot,
+              text: "Scout analyzes the top 15 candidates using data already loaded on the page — no additional API calls needed",
+            },
+            {
+              icon: Bot,
+              text: "Streams a structured brief: Executive Summary, Top 5 Recommendations, Surging Demand, Risk Flags, and This Week's Priority",
+            },
+            {
+              icon: Bot,
+              text: 'Click "Re-run Analysis" to generate a fresh brief at any time',
+            },
+          ].map((item, i) => (
+            <div
+              key={i}
+              className="flex items-start gap-3 text-sm text-muted-foreground"
+            >
+              <item.icon className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+              <span>{item.text}</span>
+            </div>
+          ))}
+        </div>
+        <DocsCallout type="tip" title="Scout vs. Quick Summary">
+          Quick AI Summary gives a per-token snapshot. Migration Scout gives a
+          pipeline-level analysis comparing all candidates. Use Scout for weekly
+          prioritization and Quick Summary for spot-checking individual tokens.
+        </DocsCallout>
       </div>
 
       <DocsCallout type="info">

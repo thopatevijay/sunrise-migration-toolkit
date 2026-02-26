@@ -262,8 +262,9 @@ export function TokenDetailSection() {
         <p className="text-sm text-muted-foreground leading-relaxed mb-3">
           A conversational AI assistant available on every token detail page.
           Click the floating gradient button (bottom-right) to open the chat
-          panel. The AI uses tool-calling to fetch live token data before
-          answering.
+          panel. Token data is pre-loaded from the page, so responses arrive in
+          2&ndash;7 seconds. The AI can also call tools to fetch additional data
+          (e.g., comparing with a different token).
         </p>
         <div className="space-y-3">
           <Card className="glass-card">
