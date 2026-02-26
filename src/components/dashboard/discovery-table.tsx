@@ -24,6 +24,8 @@ import {
   Star,
   Loader2,
   Zap,
+  Sparkles,
+  X,
 } from "lucide-react";
 import { TrendIndicator } from "@/components/shared/trend-indicator";
 import { MdsBadge } from "@/components/shared/mds-badge";
@@ -237,6 +239,50 @@ export function DiscoveryTable({ tokens, isLoading }: DiscoveryTableProps) {
   // On-demand MDS scoring state
   const [scores, setScores] = useState<Record<string, number>>({});
   const [scoringIds, setScoringIds] = useState<Set<string>>(new Set());
+
+  // AI quick summary state
+  const [summaries, setSummaries] = useState<Record<string, string>>({});
+  const [summaryLoadingIds, setSummaryLoadingIds] = useState<Set<string>>(new Set());
+  const [activeSummaryId, setActiveSummaryId] = useState<string | null>(null);
+
+  const handleSummary = useCallback(async (e: React.MouseEvent, coingeckoId: string) => {
+    e.stopPropagation();
+
+    // If already loaded, just toggle visibility
+    if (summaries[coingeckoId]) {
+      setActiveSummaryId((prev) => (prev === coingeckoId ? null : coingeckoId));
+      return;
+    }
+
+    if (summaryLoadingIds.has(coingeckoId)) return;
+
+    setSummaryLoadingIds((prev) => {
+      const next = new Set(prev);
+      next.add(coingeckoId);
+      return next;
+    });
+    setActiveSummaryId(coingeckoId);
+
+    try {
+      const res = await fetch("/api/ai/quick-summary", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ coingeckoId }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSummaries((prev) => ({ ...prev, [coingeckoId]: data.summary }));
+      }
+    } catch {
+      // silently fail
+    } finally {
+      setSummaryLoadingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(coingeckoId);
+        return next;
+      });
+    }
+  }, [summaries, summaryLoadingIds]);
 
   const handleScore = useCallback(async (e: React.MouseEvent, token: DiscoveryToken) => {
     e.stopPropagation();
@@ -521,6 +567,7 @@ export function DiscoveryTable({ tokens, isLoading }: DiscoveryTableProps) {
                 <TableHead className="text-xs">
                   <SortableHeader label="MDS" sortKeyName="mds" />
                 </TableHead>
+                <TableHead className="text-xs">AI</TableHead>
                 <TableHead className="text-xs hidden lg:table-cell">
                   Chains
                 </TableHead>
@@ -608,6 +655,50 @@ export function DiscoveryTable({ tokens, isLoading }: DiscoveryTableProps) {
                         )}
                         <span>{scoringIds.has(token.coingeckoId) ? "Scoring..." : "Score"}</span>
                       </button>
+                    )}
+                  </TableCell>
+                  <TableCell className="relative">
+                    <button
+                      onClick={(e) => handleSummary(e, token.coingeckoId)}
+                      className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs transition-colors ${
+                        activeSummaryId === token.coingeckoId && summaries[token.coingeckoId]
+                          ? "bg-purple-500/20 text-purple-400 border border-purple-500/30"
+                          : "bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-foreground border border-white/10"
+                      }`}
+                    >
+                      {summaryLoadingIds.has(token.coingeckoId) ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <Sparkles className="h-3 w-3" />
+                      )}
+                    </button>
+                    {activeSummaryId === token.coingeckoId && (summaries[token.coingeckoId] || summaryLoadingIds.has(token.coingeckoId)) && (
+                      <div
+                        className="absolute z-50 top-full left-0 mt-1 w-[280px] rounded-lg border border-white/10 bg-background shadow-xl p-3"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-[10px] font-medium text-purple-400 flex items-center gap-1">
+                            <Sparkles className="h-3 w-3" /> AI Summary
+                          </span>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setActiveSummaryId(null); }}
+                            className="text-muted-foreground hover:text-foreground"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                        {summaryLoadingIds.has(token.coingeckoId) ? (
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                            Analyzing {token.symbol}...
+                          </div>
+                        ) : (
+                          <p className="text-xs text-muted-foreground leading-relaxed">
+                            {summaries[token.coingeckoId]}
+                          </p>
+                        )}
+                      </div>
                     )}
                   </TableCell>
                   <TableCell className="hidden lg:table-cell">
