@@ -10,7 +10,8 @@ Tideshift covers the full token migration lifecycle with seven integrated produc
 4. **On-Demand MDS Scoring** — score any Discovery token's migration demand in real time via API
 5. **Migration Health Monitor** — tracks post-migration health of tokens already brought to Solana
 6. **Enhanced Proposal Builder** — auto-generates migration proposals with bridge recommendations, liquidity estimates, and risk assessment
-7. **Community Onboarding Flow** — white-label onboarding for migrated token communities (RENDER, HNT, POWR, GEOD)
+7. **AI Integration** — GPT-4o-mini streaming proposals (3 tones) + Ask Tideshift conversational chat with tool-calling
+8. **Community Onboarding Flow** — white-label onboarding for migrated token communities (RENDER, HNT, POWR, GEOD)
 
 ## Directory Structure
 
@@ -50,6 +51,9 @@ src/
 │       ├── votes/
 │       │   ├── route.ts              # GET/POST /api/votes (community demand votes via Upstash Redis)
 │       │   └── user/route.ts         # GET /api/votes/user (per-user vote history)
+│       ├── ai/
+│       │   ├── proposal/route.ts     # POST /api/ai/proposal (streaming AI proposal, 3 tones)
+│       │   └── chat/route.ts         # POST /api/ai/chat (chat with tool-calling)
 │       ├── analytics/
 │       │   └── onboarding/route.ts   # GET/POST /api/analytics/onboarding (Redis-backed funnel)
 │       └── yields/
@@ -71,7 +75,9 @@ src/
 │   │   │   ├── migration-readiness.tsx # NTT/team/bridge checklist
 │   │   │   └── similar-tokens.tsx    # Related token cards
 │   │   └── proposal-builder/
-│   │       └── proposal-form.tsx     # Auto-analysis proposal: bridge, liquidity, risk, competitive
+│   │       └── proposal-form.tsx     # AI streaming proposal (3 tones) + classic rule-based fallback
+│   ├── token-detail/
+│   │   └── ask-tideshift.tsx         # Floating chat panel with tool-calling AI assistant
 │   ├── onboarding/
 │   │   ├── onboarding-stepper.tsx    # 5-step progress bar
 │   │   ├── onboarding-analytics.tsx  # Funnel visualization component
@@ -125,6 +131,9 @@ src/
 │   │   ├── normalizers.ts            # 5 signal normalizers (0-100)
 │   │   ├── weights.ts                # Signal weights + labels
 │   │   └── migration-analysis.ts     # Auto-analysis: bridge recommendation, liquidity, risk, competitive
+│   ├── ai/
+│   │   ├── serialize.ts              # serializeTokenForAI() — structured text for LLM context
+│   │   └── prompts.ts                # System prompts: 3 proposal tones + chat scope rules
 │   ├── analytics/
 │   │   └── onboarding.ts             # Step tracking via API (fire-and-forget POST to Redis)
 │   ├── types/
@@ -260,6 +269,7 @@ A token with 3/5 signals gets `confidence: 0.6`. Tokens with 0 signals are exclu
 | CoinGecko | `api.coingecko.com/api/v3` | Market data, community/social data, platforms | 10-30/min (30 with key) |
 | Jupiter | `api.jup.ag` | Verified token list, bridged token detection, liquidity data | Key required |
 | Helius | `mainnet.helius-rpc.com` | Real SPL token holder counts (DAS API) | 10 rps with key |
+| OpenAI | `api.openai.com/v1` | GPT-4o-mini: streaming proposals + chat with tool-calling | Pay-per-use |
 
 ### Tier 3: Persistent Storage
 
@@ -409,6 +419,43 @@ Auto-generates structured migration analysis from token data:
 - Negative sentiment: medium if < 0
 - Overall level: high (any high factor), medium (2+ medium), low (default)
 
+## AI Integration
+
+Tideshift uses the Vercel AI SDK (`ai` + `@ai-sdk/openai`) with GPT-4o-mini for two features:
+
+### AI Proposal Generation
+
+`POST /api/ai/proposal` accepts `{ tokenId, tone }` and:
+1. Fetches `TokenDetail` server-side via `getTokenDetail(tokenId)`
+2. Serializes token data via `serializeTokenForAI()` — structured text covering all 5 MDS signals, market data, bridge activity, social metrics, wallet overlap
+3. Selects system prompt based on tone (executive / technical / community)
+4. Streams response via `streamText()` with `toTextStreamResponse()`
+5. Client renders with `useCompletion()` + `react-markdown`
+
+**Tones:**
+- **Executive** — Board-ready brief: verdict first, ROI-focused, strategic language
+- **Technical** — Protocol-aware: bridge mechanics, pool math, integration complexity
+- **Community** — Holder-friendly: plain language, "what this means for you"
+
+**Fallback:** If OpenAI is unavailable, the classic rule-based `generateMigrationAnalysis()` runs automatically.
+
+### Ask Tideshift Chat
+
+`POST /api/ai/chat` accepts `{ messages, tokenId }` and:
+1. Converts UIMessages to ModelMessages via `convertToModelMessages()`
+2. Injects token context into system prompt (so "this token" resolves correctly)
+3. Streams response with `stopWhen: stepCountIs(3)` for multi-step tool execution
+4. Returns `toUIMessageStreamResponse()` for `useChat` compatibility
+
+**Tools available to the AI:**
+| Tool | Description |
+|------|-------------|
+| `getTokenData(tokenId)` | Fetch full migration data for any token |
+| `compareTokens(tokenIdA, tokenIdB)` | Side-by-side MDS comparison |
+| `explainSignal(tokenId, signal)` | Deep-dive into a specific MDS signal |
+
+**Scope enforcement:** The system prompt restricts responses to migration analysis and Solana ecosystem topics. Off-topic questions (general knowledge, math, etc.) are politely declined.
+
 ## API Health Board
 
 Real-time sidebar panel showing the status of all API providers (CoinGecko, WormholeScan, DefiLlama, Jupiter, DexScreener).
@@ -468,6 +515,7 @@ All MDS signals trace to real APIs — no hardcoded, fabricated, or simulated da
 | Wallet overlap | Heuristic + DefiLlama | Chain proximity model enhanced with real protocol TVL ratios |
 | DeFi yields | DefiLlama Yields | Real APYs for Kamino, MarginFi, Raydium, etc. |
 | Onboarding analytics | Upstash Redis | Real funnel conversion data (Redis SETs, auto-deduplicated) |
+| AI analysis | OpenAI GPT-4o-mini | Streaming proposals (3 tones) + chat with tool-calling |
 | Demand votes | Upstash Redis | Persistent community votes (not localStorage) |
 
 ### Missing Data Handling

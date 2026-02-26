@@ -11,6 +11,8 @@ import {
   CheckCircle2,
   GitCompare,
   FileText,
+  Sparkles,
+  Bot,
 } from "lucide-react";
 import { DocsSection } from "@/components/docs/docs-section";
 import { DocsCallout } from "@/components/docs/docs-callout";
@@ -99,7 +101,7 @@ const additionalSections = [
     icon: FileText,
     title: "Generate Proposal",
     description:
-      "One-click button to auto-generate a structured migration proposal with bridge recommendations, liquidity estimates, and risk assessment.",
+      "AI-powered proposal generation with 3 tones (Executive, Technical, Community). Streams narrative analysis from GPT-4o-mini using live token data.",
   },
 ];
 
@@ -249,11 +251,62 @@ export function TokenDetailSection() {
         </div>
       </div>
 
+      {/* Ask Tideshift */}
+      <div>
+        <h3 className="text-base font-semibold mb-3">
+          <span className="inline-flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-primary" />
+            Ask Tideshift
+          </span>
+        </h3>
+        <p className="text-sm text-muted-foreground leading-relaxed mb-3">
+          A conversational AI assistant available on every token detail page.
+          Click the floating gradient button (bottom-right) to open the chat
+          panel. The AI uses tool-calling to fetch live token data before
+          answering.
+        </p>
+        <div className="space-y-3">
+          <Card className="glass-card">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Bot className="h-4 w-4 text-primary" />
+                <span className="text-sm font-semibold">What you can ask</span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {[
+                  { q: "Why should Sunrise migrate this token?", desc: "Fetches token data and provides a migration case analysis" },
+                  { q: "What are the biggest risks?", desc: "Analyzes risk signals: declining bridge trend, low overlap, sentiment" },
+                  { q: "Compare this to RENDER", desc: "Fetches both tokens and gives signal-by-signal comparison" },
+                  { q: "Explain the bridge outflow data", desc: "Deep-dives into the bridge signal with raw values and context" },
+                ].map((item) => (
+                  <div
+                    key={item.q}
+                    className="rounded-lg bg-white/[0.03] border border-white/[0.06] px-3 py-2"
+                  >
+                    <p className="text-xs font-medium text-foreground mb-0.5">
+                      &ldquo;{item.q}&rdquo;
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {item.desc}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+        <DocsCallout type="info" title="Scoped to migration topics">
+          Ask Tideshift only answers questions about token migration, demand
+          signals, bridge strategies, and the Solana ecosystem. Off-topic
+          questions (general knowledge, math, etc.) are politely declined.
+        </DocsCallout>
+      </div>
+
       {/* Tip Callout */}
       <DocsCallout type="tip" title="Generate a Proposal">
         Click &ldquo;Generate Proposal&rdquo; on any token detail page to create
-        a structured migration proposal with bridge recommendations, liquidity
-        estimates, and risk assessment.
+        an AI-powered migration proposal. Choose Executive, Technical, or
+        Community tone for different audiences.
       </DocsCallout>
     </DocsSection>
   );

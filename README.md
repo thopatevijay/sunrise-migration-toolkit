@@ -89,7 +89,8 @@ Dynamically scores the **top 50 non-Solana tokens** (by market cap) using 5 real
 - **Demand trends** — is interest growing or fading?
 - **Community demand voting** — persistent via Upstash Redis
 - **On-demand MDS scoring** — score any Discovery token in real time from the table
-- **Auto-generated proposals** — bridge recommendation, liquidity estimates, risk assessment, competitive landscape
+- **AI-powered proposals** — GPT-4o-mini streaming analysis in 3 tones (Executive, Technical, Community) with classic rule-based fallback
+- **Ask Tideshift chat** — conversational AI assistant on every token detail page with tool-calling (fetches live token data, compares tokens, explains signals)
 
 **Who uses this:** Sunrise team, to prioritize which tokens to bring next. Token teams, to see if demand exists before applying.
 
@@ -170,6 +171,7 @@ Currently live for: RENDER, HNT, POWR, GEOD
 | TVL & protocols | DefiLlama | Protocol TVL, Solana TVL ratios, chain bridge volumes |
 | DeFi yields | DefiLlama Yields | Live APYs for Kamino, MarginFi, Raydium, Orca, Drift, Sanctum, Jupiter |
 | Token listing + liquidity | Jupiter | Verified token list, bridged token detection, Solana liquidity data |
+| AI analysis | OpenAI (GPT-4o-mini) | Streaming proposal generation (3 tones), chat with tool-calling |
 | Holder counts | Helius DAS API | Real SPL token holder counts for Solana-listed tokens |
 | Wallet overlap | Heuristic + DefiLlama | Chain proximity + bridge data + protocol TVL ratios |
 | Onboarding analytics | Upstash Redis | Real funnel conversion tracking (Redis SETs, auto-deduplicated) |
@@ -181,7 +183,7 @@ Currently live for: RENDER, HNT, POWR, GEOD
 
 ### Sunrise Team — Finding the Next Migration
 
-> **As a Sunrise team member**, I open the Demand Dashboard on Monday morning. The top-ranked token is ONDO (Ondo Finance) with an MDS of 87. The dashboard shows: real bridge outflows from WormholeScan, $29M in 24h DEX trading volume from DexScreener, and strong community sentiment from CoinGecko. I click "Generate Proposal" and get a structured brief — token health metrics, community size, liquidity requirements — ready to share with the team and start the migration conversation with Ondo's team.
+> **As a Sunrise team member**, I open the Demand Dashboard on Monday morning. The top-ranked token is ONDO (Ondo Finance) with an MDS of 87. The dashboard shows: real bridge outflows from WormholeScan, $29M in 24h DEX trading volume from DexScreener, and strong community sentiment from CoinGecko. I click "Generate Proposal" and choose the Executive tone — AI streams a board-ready migration brief with demand evidence, risk narrative, bridge strategy, and liquidity plan. I switch to Technical tone for the engineering team. Before submitting, I open Ask Tideshift and ask "Compare ONDO to SUI" — the AI fetches both tokens' live data and gives a side-by-side analysis.
 
 ### Token Team — Deciding to Come to Solana
 
@@ -205,7 +207,8 @@ Currently live for: RENDER, HNT, POWR, GEOD
 | Anecdotal signals | Quantified demand with MDS scoring across 5 real-time signal categories |
 | No visibility into migration landscape | Full list of top-500 tokens without Solana CA, exportable as CSV |
 | No community input | Persistent community demand voting via Upstash Redis |
-| Manual proposal writing | Auto-generated proposals with bridge, liquidity, and risk analysis |
+| Manual proposal writing | AI-powered proposals in 3 tones + classic rule-based fallback |
+| No conversational analysis | Ask Tideshift: AI chat with tool-calling on every token page |
 | No post-migration tracking | Migration Health Monitor with health scores and trend data |
 | Community left to figure it out | Guided onboarding for 4 tokens with live DeFi APYs |
 | No post-migration metrics | Conversion analytics at every step |
@@ -221,16 +224,16 @@ Tideshift turns Sunrise's migration pipeline from a series of one-off efforts in
 ┌──────────────────────────────────────────────────────────────────────────┐
 │                          FRONTEND (Next.js)                              │
 │                                                                          │
-│  ┌─────────────┐ ┌──────────┐ ┌──────────┐ ┌───────────┐ ┌──────────┐  │
-│  │  Discovery   │ │Dashboard │ │Migration │ │ Proposal  │ │Onboarding│  │
-│  │  Table       │ │ (MDS)   │ │ Health   │ │ Builder   │ │  Flow    │  │
-│  │             │ │          │ │ Monitor  │ │           │ │          │  │
-│  │ ~300 tokens │ │ Top 50   │ │ RENDER,  │ │ Auto-gen  │ │ 4 tokens │  │
-│  │ Demand vote │ │ dynamic  │ │ HNT,     │ │ bridge +  │ │ 5 steps  │  │
-│  │ MDS scoring │ │ scoring  │ │ POWR,    │ │ liquidity │ │ each     │  │
-│  │ CSV export  │ │          │ │ GEOD     │ │           │ │          │  │
-│  └──────┬──────┘ └────┬─────┘ └────┬─────┘ └─────┬─────┘ └────┬─────┘  │
-│          └─────────────┼───────────┼──────────────┼────────────┘         │
+│  ┌───────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐  │
+│  │ Discovery │ │Dashboard │ │Migration │ │ AI       │ │Onboarding│  │
+│  │ Table     │ │ (MDS)   │ │ Health   │ │ Layer    │ │  Flow    │  │
+│  │           │ │          │ │ Monitor  │ │          │ │          │  │
+│  │ ~300      │ │ Top 50   │ │ RENDER,  │ │ Proposal │ │ 4 tokens │  │
+│  │ tokens    │ │ dynamic  │ │ HNT,     │ │ 3 tones  │ │ 5 steps  │  │
+│  │ Demand    │ │ scoring  │ │ POWR,    │ │ Ask      │ │ each     │  │
+│  │ vote+CSV  │ │          │ │ GEOD     │ │ Tideshift│ │          │  │
+│  └─────┬─────┘ └────┬─────┘ └────┬─────┘ └─────┬────┘ └────┬─────┘  │
+│         └────────────┼───────────┼──────────────┼───────────┘         │
 └────────────────────────┼───────────┼──────────────┼──────────────────────┘
                          ▼           ▼              ▼
 ┌──────────────────────────────────────────────────────────────────────────┐
@@ -247,11 +250,11 @@ Tideshift turns Sunrise's migration pipeline from a series of one-off efforts in
 │  │Market +  │ │Bridge    │ │TVL +     │ │DEX Data  │ │ Holder   │     │
 │  │Social    │ │Data      │ │Yields    │ │+ Trends  │ │ Counts   │     │
 │  └──────────┘ └──────────┘ └──────────┘ └──────────┘ └──────────┘     │
-│  ┌──────────┐ ┌──────────┐                                            │
-│  │ Jupiter  │ │ Upstash  │                                            │
-│  │ Bridged  │ │ Redis    │                                            │
-│  │ Tokens   │ │ Votes    │                                            │
-│  └──────────┘ └──────────┘                                            │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐                               │
+│  │ Jupiter  │ │ Upstash  │ │ OpenAI   │                               │
+│  │ Bridged  │ │ Redis    │ │ GPT-4o   │                               │
+│  │ Tokens   │ │ Votes    │ │ mini     │                               │
+│  └──────────┘ └──────────┘ └──────────┘                               │
 │                                                                          │
 │  ┌─────────────────────────────────────────────────────────────────┐    │
 │  │  Batch Processing (5/batch, 2s delay) + TTL Cache + Health Board│    │
@@ -265,9 +268,10 @@ Tideshift turns Sunrise's migration pipeline from a series of one-off efforts in
 | Layer | Technology |
 |-------|-----------|
 | Frontend | Next.js 14, Tailwind CSS, Recharts, shadcn/ui, Framer Motion |
+| AI Layer | Vercel AI SDK + GPT-4o-mini (streaming proposals, chat with tool-calling) |
 | Data Fetching | SWR (auto-refresh), server-side TTL cache |
 | APIs (Free, no auth) | WormholeScan, DefiLlama, DexScreener |
-| APIs (Free, key required) | CoinGecko (market + social), Jupiter (bridged token detection + liquidity), Helius (holder counts) |
+| APIs (Free, key required) | CoinGecko (market + social), Jupiter (bridged token detection + liquidity), Helius (holder counts), OpenAI (AI analysis) |
 | Persistent Storage | Upstash Redis (community demand votes + onboarding analytics) |
 | Monitoring | API Health Board (real-time provider status in sidebar) |
 | Deployment | Vercel |
@@ -282,7 +286,7 @@ Tideshift is designed to grow with Sunrise — not as a hackathon demo, but as p
 - Dynamic demand dashboard scoring top 50 tokens from live data (8 API providers)
 - Community demand voting with persistent Upstash Redis storage
 - On-demand MDS scoring with real DexScreener + CoinGecko + Helius data
-- Auto-generated migration proposals with bridge, liquidity, and risk analysis
+- AI-powered migration proposals (3 tones) with classic rule-based fallback
 - Post-migration health monitoring for 4 tokens (RENDER, HNT, POWR, GEOD)
 - White-label onboarding flows with live DeFi APYs from DefiLlama
 
@@ -330,6 +334,7 @@ Open [http://localhost:3000](http://localhost:3000) to see the application.
 | `COINGECKO_API_KEY` | Optional | Increases rate limit from 10/min to 30/min ([free key](https://www.coingecko.com/en/api)) |
 | `JUPITER_API_KEY` | Optional | Verified token list for bridged token detection + liquidity ([free key](https://portal.jup.ag)) |
 | `HELIUS_API_KEY` | Optional | Real on-chain holder counts via DAS API ([free tier](https://helius.dev): 1M credits/mo) |
+| `OPENAI_API_KEY` | Optional | AI-powered proposals + Ask Tideshift chat via GPT-4o-mini ([get key](https://platform.openai.com/api-keys)) |
 | `UPSTASH_REDIS_REST_URL` | Optional | Persistent community demand votes ([free tier](https://upstash.com): 10K cmds/day) |
 | `UPSTASH_REDIS_REST_TOKEN` | Optional | Redis auth token for Upstash |
 
@@ -349,7 +354,7 @@ The app runs entirely on live API data from 8 providers. The Discovery page surf
 |------|-----|-------------|
 | Dashboard | [/](https://tideshift.vercel.app/) | 50 dynamically scored tokens, MDS rankings, bridge outflow charts |
 | Discovery | [/discovery](https://tideshift.vercel.app/discovery) | ~300 tokens, demand voting, on-demand MDS scoring, CSV export |
-| Token Detail | [/tokens/tether-gold](https://tideshift.vercel.app/tokens/tether-gold) | Radar chart, signal analysis, price chart, auto-proposal builder |
+| Token Detail | [/tokens/tether-gold](https://tideshift.vercel.app/tokens/tether-gold) | Radar chart, signal analysis, price chart, AI proposal builder, Ask Tideshift chat |
 | Migrations | [/migrations](https://tideshift.vercel.app/migrations) | Post-migration health monitor for RENDER, HNT, POWR, GEOD |
 | Proposals | [/proposals](https://tideshift.vercel.app/proposals) | Saved migration proposals with copy/share |
 | Onboarding (RENDER) | [/onboard/render](https://tideshift.vercel.app/onboard/render) | 5-step guided migration: wallet → bridge → trade → DeFi |

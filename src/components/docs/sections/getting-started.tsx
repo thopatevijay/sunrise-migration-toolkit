@@ -48,7 +48,7 @@ const features = [
   {
     icon: Coins,
     title: "Token Detail",
-    description: "Deep signal analysis, radar charts, and proposal generation.",
+    description: "Deep signal analysis, radar charts, AI proposals, and Ask Tideshift chat.",
     link: "/tokens",
     linkText: "Explore Tokens",
   },
@@ -70,7 +70,7 @@ const features = [
   {
     icon: FileText,
     title: "Proposals",
-    description: "Auto-generated migration proposals with risk assessments.",
+    description: "AI-powered proposals in 3 tones with risk assessments.",
     link: "/proposals",
     linkText: "Browse Proposals",
   },

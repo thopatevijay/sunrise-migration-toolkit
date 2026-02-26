@@ -55,6 +55,11 @@ const tier2 = [
     data: "Real SPL token holder counts (DAS API)",
     rateLimit: "10 rps",
   },
+  {
+    provider: "OpenAI",
+    data: "GPT-4o-mini: streaming proposals (3 tones) + Ask Tideshift chat",
+    rateLimit: "Pay-per-use",
+  },
 ];
 
 const tier3 = [

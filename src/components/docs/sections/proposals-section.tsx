@@ -8,6 +8,9 @@ import {
   ExternalLink,
   Eye,
   AlertTriangle,
+  Bot,
+  RefreshCw,
+  Palette,
 } from "lucide-react";
 import { DocsSection } from "@/components/docs/docs-section";
 import { DocsCallout } from "@/components/docs/docs-callout";
@@ -100,7 +103,7 @@ export function ProposalsSection() {
         <h3 className="text-base font-semibold mb-3">How Proposals Work</h3>
         <p className="text-sm text-muted-foreground leading-relaxed mb-3">
           Proposals turn raw signal data into structured, actionable migration
-          documents.
+          documents. Powered by GPT-4o-mini with real-time token data.
         </p>
         <div className="space-y-2">
           {[
@@ -109,8 +112,16 @@ export function ProposalsSection() {
               text: 'Navigate to any token detail page and click "Generate Proposal"',
             },
             {
-              icon: Sparkles,
-              text: "The system analyzes the token across 5 dimensions and generates a structured proposal",
+              icon: Palette,
+              text: "Choose a tone: Executive (board-ready), Technical (protocol-focused), or Community (holder-friendly)",
+            },
+            {
+              icon: Bot,
+              text: "AI streams a narrative analysis using live token data — demand evidence, risk narrative, bridge strategy, liquidity plan, and timeline",
+            },
+            {
+              icon: RefreshCw,
+              text: 'Click "Regenerate" to get a fresh analysis, or switch tones for a different audience',
             },
             {
               icon: Sparkles,
@@ -126,6 +137,59 @@ export function ProposalsSection() {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* AI Tones */}
+      <div>
+        <h3 className="text-base font-semibold mb-3">AI Analysis Tones</h3>
+        <p className="text-sm text-muted-foreground leading-relaxed mb-3">
+          The same token data produces distinctly different analysis depending on the audience.
+        </p>
+        <div className="space-y-3">
+          {[
+            {
+              tone: "Executive",
+              audience: "Sunrise leadership",
+              style: "Concise, strategic, ROI-focused. Leads with the verdict, backs it with evidence.",
+              example: "\"Bridge outflows of $28.8M signal steady cross-chain demand — Solana users are actively leaving other chains to access this asset.\"",
+            },
+            {
+              tone: "Technical",
+              audience: "Engineering team",
+              style: "Precise, protocol-aware. References bridge mechanics, pool math, and integration complexity.",
+              example: "\"NTT via Wormhole is recommended given Ethereum-origin with existing Guardian support. Initial pool deployment: 40% Jupiter CLMM, 30% Raydium concentrated.\"",
+            },
+            {
+              tone: "Community",
+              audience: "Token holders",
+              style: "Approachable, holder-friendly. Explains in plain language what migration means for you.",
+              example: "\"Your tokens will be available on Solana with near-instant swaps on Jupiter. Bridge takes under a minute, and you can start earning yield on day one.\"",
+            },
+          ].map((t) => (
+            <Card key={t.tone} className="glass-card">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <Badge variant="outline" className="text-xs font-semibold">
+                    {t.tone}
+                  </Badge>
+                  <span className="text-xs text-muted-foreground">
+                    for {t.audience}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground mb-2">{t.style}</p>
+                <div className="rounded bg-white/[0.03] border border-white/[0.06] px-3 py-2">
+                  <p className="text-xs text-muted-foreground italic">{t.example}</p>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <DocsCallout type="info" title="Classic fallback">
+          If the OpenAI API key is not configured or the AI service is
+          unavailable, proposals automatically fall back to the rule-based
+          analysis engine. Click &ldquo;Switch to Classic&rdquo; to use it
+          manually.
+        </DocsCallout>
       </div>
 
       {/* Bridge Recommendation */}
