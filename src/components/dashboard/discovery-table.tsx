@@ -13,7 +13,6 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   Search,
   ArrowUpDown,
@@ -99,6 +98,52 @@ function downloadCSV(tokens: DiscoveryToken[]) {
   a.download = `no-solana-tokens-${new Date().toISOString().split("T")[0]}.csv`;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+const LOADING_STEPS = [
+  { text: "Fetching top 500 tokens from CoinGecko", duration: 3000 },
+  { text: "Loading platform data for chain detection", duration: 4000 },
+  { text: "Cross-referencing Solana contract addresses", duration: 2000 },
+  { text: "Filtering stablecoins and low-cap tokens", duration: 1500 },
+  { text: "Checking Jupiter for bridged tokens", duration: 3000 },
+  { text: "Building discovery table", duration: 2000 },
+];
+
+function DiscoveryLoadingState() {
+  const [stepIndex, setStepIndex] = useState(0);
+
+  useEffect(() => {
+    if (stepIndex >= LOADING_STEPS.length - 1) return;
+    const timer = setTimeout(
+      () => setStepIndex((i) => Math.min(i + 1, LOADING_STEPS.length - 1)),
+      LOADING_STEPS[stepIndex].duration
+    );
+    return () => clearTimeout(timer);
+  }, [stepIndex]);
+
+  const progress = Math.round(((stepIndex + 1) / LOADING_STEPS.length) * 100);
+
+  return (
+    <Card className="glass-card">
+      <CardContent className="py-16 flex flex-col items-center justify-center gap-5">
+        <Loader2 className="h-8 w-8 text-primary animate-spin" />
+        <div className="text-center space-y-2">
+          <p className="text-sm font-medium text-foreground">
+            {LOADING_STEPS[stepIndex].text}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Step {stepIndex + 1} of {LOADING_STEPS.length}
+          </p>
+        </div>
+        <div className="w-64 h-1.5 rounded-full bg-white/10 overflow-hidden">
+          <div
+            className="h-full rounded-full bg-primary/60 transition-all duration-700 ease-out"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      </CardContent>
+    </Card>
+  );
 }
 
 export function DiscoveryTable({ tokens, isLoading }: DiscoveryTableProps) {
@@ -333,18 +378,7 @@ export function DiscoveryTable({ tokens, isLoading }: DiscoveryTableProps) {
   );
 
   if (isLoading) {
-    return (
-      <Card className="glass-card">
-        <CardHeader>
-          <Skeleton className="h-5 w-48" />
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {Array.from({ length: 10 }).map((_, i) => (
-            <Skeleton key={i} className="h-12 w-full" />
-          ))}
-        </CardContent>
-      </Card>
-    );
+    return <DiscoveryLoadingState />;
   }
 
   return (
