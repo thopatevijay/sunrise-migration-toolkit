@@ -1,4 +1,4 @@
-import { streamText, tool } from "ai";
+import { streamText, tool, convertToModelMessages, stepCountIs } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 import { NextResponse } from "next/server";
@@ -34,12 +34,15 @@ export async function POST(request: Request) {
     ? `${CHAT_SYSTEM_PROMPT}\n\nThe user is currently viewing token: "${tokenId}". When they say "this token" or "it", they mean "${tokenId}".`
     : CHAT_SYSTEM_PROMPT;
 
+  const modelMessages = await convertToModelMessages(messages);
+
   const result = streamText({
     model: openai("gpt-4o-mini"),
     temperature: 0.4,
     maxOutputTokens: 1000,
+    stopWhen: stepCountIs(3),
     system: systemPrompt,
-    messages,
+    messages: modelMessages,
     tools: {
       getTokenData: tool({
         description:

@@ -10,6 +10,7 @@ import { PriceChart } from "@/components/dashboard/token-detail/price-chart";
 import { MigrationReadiness } from "@/components/dashboard/token-detail/migration-readiness";
 import { SimilarTokens } from "@/components/dashboard/token-detail/similar-tokens";
 import { ProposalForm } from "@/components/dashboard/proposal-builder/proposal-form";
+import { AskTideshift } from "@/components/token-detail/ask-tideshift";
 
 export default function TokenDetailPage({
   params,
@@ -61,6 +62,8 @@ export default function TokenDetailPage({
         open={proposalOpen}
         onOpenChange={setProposalOpen}
       />
+
+      <AskTideshift tokenId={token.id} tokenSymbol={token.symbol} />
     </div>
   );
 }
