@@ -37,12 +37,6 @@ const tier1 = [
     data: "DEX pairs, volume, liquidity, boosts",
     rateLimit: "300/min",
   },
-  {
-    provider: "Jupiter",
-    baseUrl: "lite-api.jup.ag",
-    data: "Token listing verification, prices",
-    rateLimit: "60/min",
-  },
 ];
 
 const tier2 = [
@@ -50,6 +44,11 @@ const tier2 = [
     provider: "CoinGecko",
     data: "Market data, community/social data, platform lookups",
     rateLimit: "10\u201330/min",
+  },
+  {
+    provider: "Jupiter",
+    data: "Verified token list, bridged token detection, liquidity data",
+    rateLimit: "Key required",
   },
   {
     provider: "Helius",

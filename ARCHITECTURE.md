@@ -116,7 +116,7 @@ src/
 │   │   │   ├── wormhole.ts           # Bridge outflow data (WormholeScan)
 │   │   │   ├── defillama.ts          # TVL, protocol data, bridge volumes, Solana TVL ratios
 │   │   │   ├── defillama-yields.ts   # Live DeFi APYs (Kamino, MarginFi, Raydium, Orca, etc.)
-│   │   │   ├── jupiter.ts            # Jupiter listing verification + prices
+│   │   │   ├── jupiter.ts            # Jupiter listing verification + prices + bridged token map + liquidity
 │   │   │   ├── wallet-heuristic.ts   # Wallet overlap estimation (chain proximity + TVL ratios)
 │   │   │   └── index.ts              # Re-exports all providers
 │   │   └── (no demo folder — all data from live APIs)
@@ -169,6 +169,7 @@ Provider Clients (src/lib/data/providers/)
   │
   ├── Discovery (discovery-no-solana.ts)
   │     ↓ 2 CoinGecko calls → cross-reference → filter non-Solana
+  │     ↓ Jupiter verified token list → detect bridged tokens + liquidity
   │     API Route: /api/discovery/no-solana
   │     SWR Hook (auto-refresh: 60min)
   │
@@ -250,13 +251,14 @@ A token with 3/5 signals gets `confidence: 0.6`. Tokens with 0 signals are exclu
 | WormholeScan | `api.wormholescan.io/api/v1` | Bridge volumes, scorecards | 1000/min |
 | DefiLlama | `api.llama.fi` / `bridges.llama.fi` / `yields.llama.fi` | TVL, protocols, bridge volumes, DeFi APYs | ~100/min |
 | DexScreener | `api.dexscreener.com` | DEX trading pairs, volume, liquidity, trending boosts | 300/min |
-| Jupiter | `lite-api.jup.ag` / `tokens.jup.ag` | Token listing verification, prices | 60/min |
+| Jupiter (Lite) | `lite-api.jup.ag` | Token listing verification, prices | 60/min |
 
 ### Tier 2: Free with API Key (optional)
 
 | API | Base URL | Data | Rate Limit |
 |-----|----------|------|------------|
 | CoinGecko | `api.coingecko.com/api/v3` | Market data, community/social data, platforms | 10-30/min (30 with key) |
+| Jupiter | `api.jup.ag` | Verified token list, bridged token detection, liquidity data | Key required |
 | Helius | `mainnet.helius-rpc.com` | Real SPL token holder counts (DAS API) | 10 rps with key |
 
 ### Tier 3: Persistent Storage
@@ -292,7 +294,7 @@ Every provider follows the same pattern:
 
 Surfaces tokens from the top 500 by market cap that lack a native Solana contract address — actionable data for the Sunrise BD team.
 
-### How It Works (2 API Calls)
+### How It Works (3 API Sources)
 
 ```
 CoinGecko /coins/markets (page 1 + page 2 = 500 tokens)
@@ -303,7 +305,11 @@ Cross-reference: for each top-500 token, check if "solana" key exists in platfor
   ↓
 Filter out: tokens WITH Solana CA, stablecoins, tokens < $5M market cap
   ↓
-Result: ~300 tokens ranked by market cap, cached 60 minutes
+Jupiter /tokens/v2/tag?query=verified (4500+ verified Solana tokens)
+  ↓
+Cross-reference by symbol + name similarity → detect bridged/wrapped tokens
+  ↓
+Result: ~300 tokens ranked by market cap, with Solana status + liquidity, cached 60 min
 ```
 
 ### Filtering Criteria
@@ -312,6 +318,24 @@ Result: ~300 tokens ranked by market cap, cached 60 minutes
 - **Stablecoins excluded**: USDT, USDC, DAI, BUSD, TUSD, FRAX, LUSD, PYUSD, FDUSD, USDE, and others
 - **Market cap floor**: Tokens under $5M excluded
 - **Origin chains**: Extracted from platform keys, mapped to display names (e.g., `binance-smart-chain` → `BSC`)
+
+### Bridged Token Detection (Jupiter Cross-Reference)
+
+After filtering non-Solana tokens, Discovery cross-references with Jupiter's verified token list to detect wrapped/bridged presence on Solana:
+
+1. Fetch all verified tokens from `api.jup.ag/tokens/v2/tag?query=verified` (requires `JUPITER_API_KEY`)
+2. Build a map keyed by uppercase symbol → `{ mint, name, liquidity }`
+3. For each discovery token, check if a Jupiter token exists with the same symbol
+4. **Name similarity matching** (`isLikelyBridgedMatch`) prevents false positives:
+   - Bridge tags: tokens with "(Portal)", "(Wormhole)", "(Allbridge)", "(Celer)" in Jupiter name → trusted match
+   - Name containment: one name contains the other (e.g., "Uniswap" in "Uniswap (Portal)")
+   - First word match: first word of both names match and is 3+ chars (e.g., "Chainlink" == "Chainlink")
+5. Matched tokens get `solanaStatus: "wrapped"`, `solanaMint`, and `solanaLiquidity` from Jupiter
+
+**UI integration:**
+- "Bridged" badge links to [Orb Markets](https://orbmarkets.io/token/{mint}) for analytics
+- Liquidity number links to [Jupiter](https://jup.ag/tokens/{mint}) for source verification
+- Filter pills: All / Bridged / Not on Solana
 
 ### Client Features
 

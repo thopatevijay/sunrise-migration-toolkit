@@ -60,6 +60,9 @@ Tideshift covers the **full migration lifecycle** — from demand discovery to p
 
 Scans the top 500 tokens by market cap on CoinGecko and cross-references platform data to identify tokens without a native Solana contract address. Surfaces ~300 migration opportunities with market data, origin chains, and CoinGecko links.
 
+- **Bridged token detection** — cross-references with Jupiter's verified token list to detect wrapped/bridged Solana presence (name-similarity matching prevents false positives)
+- **Solana liquidity display** — shows real liquidity data from Jupiter for bridged tokens, with links to [Orb Markets](https://orbmarkets.io) and [Jupiter](https://jup.ag)
+- **Solana status filters** — filter by All / Bridged / Not on Solana
 - **Client-side pagination** — view 25, 50, 100, 200, or all tokens at once
 - **Search and sort** — filter by token name, symbol, or chain; sort by market cap, volume, or 7d change
 - **CSV export** — download the full filtered dataset with CoinGecko URLs for Sunrise BD team analysis
@@ -166,7 +169,7 @@ Currently live for: RENDER, HNT, POWR, GEOD
 | Bridge outflows | WormholeScan | 7d/30d bridge volumes, transaction counts |
 | TVL & protocols | DefiLlama | Protocol TVL, Solana TVL ratios, chain bridge volumes |
 | DeFi yields | DefiLlama Yields | Live APYs for Kamino, MarginFi, Raydium, Orca, Drift, Sanctum, Jupiter |
-| Token listing | Jupiter | Whether token exists on Jupiter (verified listing check) |
+| Token listing + liquidity | Jupiter | Verified token list, bridged token detection, Solana liquidity data |
 | Holder counts | Helius DAS API | Real SPL token holder counts for Solana-listed tokens |
 | Wallet overlap | Heuristic + DefiLlama | Chain proximity + bridge data + protocol TVL ratios |
 | Onboarding analytics | Upstash Redis | Real funnel conversion tracking (Redis SETs, auto-deduplicated) |
@@ -246,8 +249,8 @@ Tideshift turns Sunrise's migration pipeline from a series of one-off efforts in
 │  └──────────┘ └──────────┘ └──────────┘ └──────────┘ └──────────┘     │
 │  ┌──────────┐ ┌──────────┐                                            │
 │  │ Jupiter  │ │ Upstash  │                                            │
-│  │ Listing  │ │ Redis    │                                            │
-│  │ Check    │ │ Votes    │                                            │
+│  │ Bridged  │ │ Redis    │                                            │
+│  │ Tokens   │ │ Votes    │                                            │
 │  └──────────┘ └──────────┘                                            │
 │                                                                          │
 │  ┌─────────────────────────────────────────────────────────────────┐    │
@@ -263,8 +266,8 @@ Tideshift turns Sunrise's migration pipeline from a series of one-off efforts in
 |-------|-----------|
 | Frontend | Next.js 14, Tailwind CSS, Recharts, shadcn/ui, Framer Motion |
 | Data Fetching | SWR (auto-refresh), server-side TTL cache |
-| APIs (Free, no auth) | WormholeScan, DefiLlama, DexScreener, Jupiter |
-| APIs (Free, key required) | CoinGecko (market + social), Helius (holder counts) |
+| APIs (Free, no auth) | WormholeScan, DefiLlama, DexScreener |
+| APIs (Free, key required) | CoinGecko (market + social), Jupiter (bridged token detection + liquidity), Helius (holder counts) |
 | Persistent Storage | Upstash Redis (community demand votes + onboarding analytics) |
 | Monitoring | API Health Board (real-time provider status in sidebar) |
 | Deployment | Vercel |
@@ -325,11 +328,12 @@ Open [http://localhost:3000](http://localhost:3000) to see the application.
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `COINGECKO_API_KEY` | Optional | Increases rate limit from 10/min to 30/min ([free key](https://www.coingecko.com/en/api)) |
+| `JUPITER_API_KEY` | Optional | Verified token list for bridged token detection + liquidity ([free key](https://portal.jup.ag)) |
 | `HELIUS_API_KEY` | Optional | Real on-chain holder counts via DAS API ([free tier](https://helius.dev): 1M credits/mo) |
 | `UPSTASH_REDIS_REST_URL` | Optional | Persistent community demand votes ([free tier](https://upstash.com): 10K cmds/day) |
 | `UPSTASH_REDIS_REST_TOKEN` | Optional | Redis auth token for Upstash |
 
-> **Note:** All Tier 1 APIs (WormholeScan, DefiLlama, DexScreener, Jupiter) require no API keys. The app works without any env variables — keys unlock higher rate limits and additional features.
+> **Note:** Tier 1 APIs (WormholeScan, DefiLlama, DexScreener) require no API keys. The app works without any env variables — keys unlock higher rate limits and additional features (e.g., Jupiter key enables bridged token detection on Discovery).
 
 ---
 

@@ -7,6 +7,7 @@ import {
   Zap,
   Filter,
   ExternalLink,
+  Link,
 } from "lucide-react";
 import { DocsSection } from "@/components/docs/docs-section";
 import { DocsCallout } from "@/components/docs/docs-callout";
@@ -36,8 +37,13 @@ const pipelineSteps = [
   },
   {
     step: 5,
+    label: "Detect bridged tokens",
+    detail: "Cross-reference with Jupiter verified token list — name similarity matching prevents false positives",
+  },
+  {
+    step: 6,
     label: "Result",
-    detail: "~300 tokens without Solana presence, ranked by market cap, cached 60 min",
+    detail: "~300 tokens with Solana status (Bridged / Not on Solana), liquidity data, cached 60 min",
   },
 ];
 
@@ -66,6 +72,16 @@ const tableFeatures = [
     icon: ExternalLink,
     title: "External Links",
     description: "Click any row to view on CoinGecko",
+  },
+  {
+    icon: Link,
+    title: "Bridged Token Detection",
+    description: "Cross-references Jupiter verified tokens to show Solana presence, with links to Orb Markets and Jupiter",
+  },
+  {
+    icon: Filter,
+    title: "Solana Status Filters",
+    description: "Filter by All, Bridged (wrapped on Solana), or Not on Solana",
   },
 ];
 
