@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useDiscovery } from "@/hooks/use-discovery";
 import { DiscoveryTable } from "@/components/dashboard/discovery-table";
 import { Info, X, Bot } from "lucide-react";
-import { AskTideshift } from "@/components/token-detail/ask-tideshift";
 import { MigrationScout } from "@/components/dashboard/migration-scout";
 
 export default function DiscoveryPage() {
@@ -61,8 +60,7 @@ export default function DiscoveryPage() {
       )}
 
       <DiscoveryTable tokens={tokens} isLoading={isLoading} />
-      <AskTideshift />
-      <MigrationScout open={scoutOpen} onOpenChange={setScoutOpen} />
+      <MigrationScout open={scoutOpen} onOpenChange={setScoutOpen} tokens={tokens} />
     </div>
   );
 }

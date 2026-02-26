@@ -11,6 +11,7 @@ import { MigrationReadiness } from "@/components/dashboard/token-detail/migratio
 import { SimilarTokens } from "@/components/dashboard/token-detail/similar-tokens";
 import { ProposalForm } from "@/components/dashboard/proposal-builder/proposal-form";
 import { AskTideshift } from "@/components/token-detail/ask-tideshift";
+import { serializeTokenForAI } from "@/lib/ai/serialize";
 
 export default function TokenDetailPage({
   params,
@@ -63,7 +64,7 @@ export default function TokenDetailPage({
         onOpenChange={setProposalOpen}
       />
 
-      <AskTideshift tokenId={token.id} tokenSymbol={token.symbol} />
+      <AskTideshift tokenId={token.id} tokenSymbol={token.symbol} tokenData={serializeTokenForAI(token)} />
     </div>
   );
 }

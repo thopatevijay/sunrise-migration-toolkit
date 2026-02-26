@@ -10,13 +10,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import type { DiscoveryToken } from "@/lib/types/discovery";
 
 interface MigrationScoutProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  tokens: DiscoveryToken[];
 }
 
-export function MigrationScout({ open, onOpenChange }: MigrationScoutProps) {
+export function MigrationScout({ open, onOpenChange, tokens }: MigrationScoutProps) {
   const { completion, isLoading, error, complete, setCompletion } =
     useCompletion({
       api: "/api/ai/scout",
@@ -27,7 +29,17 @@ export function MigrationScout({ open, onOpenChange }: MigrationScoutProps) {
 
   const handleRun = () => {
     setCompletion("");
-    complete("");
+    const payload = tokens.slice(0, 15).map((t) => ({
+      rank: t.rank,
+      symbol: t.symbol,
+      name: t.name,
+      marketCap: t.marketCap,
+      volume24h: t.volume24h,
+      change7d: t.change7d,
+      originChains: t.originChains,
+      solanaStatus: t.solanaStatus,
+    }));
+    complete("", { body: { tokens: payload } });
   };
 
   const handleClose = (value: boolean) => {
@@ -57,12 +69,13 @@ export function MigrationScout({ open, onOpenChange }: MigrationScoutProps) {
             <div className="text-center space-y-2">
               <p className="text-sm font-medium">Migration Scout</p>
               <p className="text-xs text-muted-foreground max-w-md">
-                Analyzes the top 10 migration candidates by MDS score and recommends
+                Analyzes the top migration candidates from the discovery table and recommends
                 the best 5 with risk flags, surging demand signals, and a priority action.
               </p>
             </div>
             <Button
               onClick={handleRun}
+              disabled={tokens.length === 0}
               className="bg-gradient-to-r from-purple-500 to-cyan-500 text-white hover:opacity-90"
             >
               <Bot className="h-4 w-4 mr-2" />
@@ -75,9 +88,9 @@ export function MigrationScout({ open, onOpenChange }: MigrationScoutProps) {
           <div className="flex flex-col items-center gap-4 py-10">
             <Loader2 className="h-8 w-8 text-primary animate-spin" />
             <div className="text-center space-y-1">
-              <p className="text-sm font-medium">Fetching token data...</p>
+              <p className="text-sm font-medium">Generating migration brief...</p>
               <p className="text-xs text-muted-foreground">
-                Analyzing top 10 candidates across all demand signals
+                Analyzing {Math.min(tokens.length, 15)} candidates from the discovery table
               </p>
             </div>
           </div>

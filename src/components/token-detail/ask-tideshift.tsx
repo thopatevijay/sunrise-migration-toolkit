@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 interface AskTideshiftProps {
   tokenId?: string;
   tokenSymbol?: string;
+  tokenData?: string;
 }
 
 const TOKEN_PROMPTS = [
@@ -27,7 +28,7 @@ const DISCOVERY_PROMPTS = [
   { label: "Low risk picks?", prompt: "Which tokens have the lowest risk and highest demand?" },
 ];
 
-export function AskTideshift({ tokenId, tokenSymbol }: AskTideshiftProps) {
+export function AskTideshift({ tokenId, tokenSymbol, tokenData }: AskTideshiftProps) {
   const isDiscovery = !tokenId;
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
@@ -36,8 +37,11 @@ export function AskTideshift({ tokenId, tokenSymbol }: AskTideshiftProps) {
   const SUGGESTED_PROMPTS = isDiscovery ? DISCOVERY_PROMPTS : TOKEN_PROMPTS;
 
   const transport = useMemo(
-    () => new DefaultChatTransport({ api: "/api/ai/chat", body: tokenId ? { tokenId } : {} }),
-    [tokenId]
+    () => new DefaultChatTransport({
+      api: "/api/ai/chat",
+      body: tokenId ? { tokenId, ...(tokenData ? { tokenData } : {}) } : {},
+    }),
+    [tokenId, tokenData]
   );
 
   const { messages, sendMessage, status, error, setMessages } = useChat({

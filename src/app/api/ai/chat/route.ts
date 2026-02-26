@@ -16,23 +16,26 @@ export async function POST(request: Request) {
     );
   }
 
-  let body: { messages?: unknown; tokenId?: string };
+  let body: { messages?: unknown; tokenId?: string; tokenData?: string };
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { messages, tokenId } = body;
+  const { messages, tokenId, tokenData } = body;
 
   if (!messages || !Array.isArray(messages)) {
     return NextResponse.json({ error: "messages array is required" }, { status: 400 });
   }
 
-  // Prepend token context to the system prompt if a tokenId is provided
-  const systemPrompt = tokenId
-    ? `${CHAT_SYSTEM_PROMPT}\n\nThe user is currently viewing token: "${tokenId}". When they say "this token" or "it", they mean "${tokenId}".`
-    : CHAT_SYSTEM_PROMPT;
+  // Build system prompt — include pre-serialized token data when available
+  let systemPrompt = CHAT_SYSTEM_PROMPT;
+  if (tokenId && tokenData) {
+    systemPrompt += `\n\nThe user is currently viewing token: "${tokenId}". When they say "this token" or "it", they mean "${tokenId}".\n\nYou already have this token's full data — use it directly to answer questions. Do NOT call getTokenData for "${tokenId}":\n\n${tokenData}`;
+  } else if (tokenId) {
+    systemPrompt += `\n\nThe user is currently viewing token: "${tokenId}". When they say "this token" or "it", they mean "${tokenId}".`;
+  }
 
   const modelMessages = await convertToModelMessages(messages);
 
