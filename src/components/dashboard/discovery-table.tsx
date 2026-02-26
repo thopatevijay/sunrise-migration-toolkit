@@ -460,7 +460,7 @@ export function DiscoveryTable({ tokens, isLoading }: DiscoveryTableProps) {
                   : "bg-white/5 text-muted-foreground hover:text-foreground hover:bg-white/10 border border-transparent"
               }`}
             >
-              {status === "all" ? "All Status" : status === "wrapped" ? "On Solana" : "No Solana"}
+              {status === "all" ? "All" : status === "wrapped" ? "Bridged" : "Not on Solana"}
             </button>
           ))}
         </div>
@@ -596,7 +596,7 @@ export function DiscoveryTable({ tokens, isLoading }: DiscoveryTableProps) {
                   <TableCell className="hidden md:table-cell">
                     {token.solanaStatus === "wrapped" ? (
                       <a
-                        href={`https://jup.ag/swap/USDC-${token.solanaMint}`}
+                        href={`https://orbmarkets.io/token/${token.solanaMint}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={(e) => e.stopPropagation()}
@@ -606,7 +606,7 @@ export function DiscoveryTable({ tokens, isLoading }: DiscoveryTableProps) {
                           variant="outline"
                           className="text-[10px] border-amber-500/30 text-amber-400 hover:bg-amber-500/10 transition-colors cursor-pointer"
                         >
-                          On Solana
+                          Bridged ↗
                         </Badge>
                       </a>
                     ) : (
@@ -614,7 +614,7 @@ export function DiscoveryTable({ tokens, isLoading }: DiscoveryTableProps) {
                         variant="outline"
                         className="text-[10px] border-red-500/30 text-red-400"
                       >
-                        No Solana
+                        Not on Solana
                       </Badge>
                     )}
                   </TableCell>

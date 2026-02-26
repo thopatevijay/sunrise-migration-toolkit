@@ -105,6 +105,33 @@ async function getPlatformMap(): Promise<Map<string, Record<string, string>> | n
   return map;
 }
 
+// --- Name similarity for Jupiter cross-reference ---
+
+/** Known bridge suffixes in Jupiter token names */
+const BRIDGE_TAGS = ["(portal)", "(wormhole)", "(allbridge)", "(celer)"];
+
+/**
+ * Check if a Jupiter token is likely the same asset as a CoinGecko token.
+ * Prevents false positives like DOT matching "Pippin's Friend".
+ */
+function isLikelyBridgedMatch(cgName: string, jupName: string): boolean {
+  const cg = cgName.toLowerCase();
+  const jup = jupName.toLowerCase();
+
+  // Jupiter name contains a bridge tag → trusted bridged asset
+  if (BRIDGE_TAGS.some((tag) => jup.includes(tag))) return true;
+
+  // Names are very similar (one contains the other)
+  if (jup.includes(cg) || cg.includes(jup)) return true;
+
+  // Compare first word (handles "Uniswap" vs "Uniswap (Portal)")
+  const cgFirst = cg.split(/[\s(]/)[0];
+  const jupFirst = jup.split(/[\s(]/)[0];
+  if (cgFirst.length >= 3 && cgFirst === jupFirst) return true;
+
+  return false;
+}
+
 // --- Main discovery function ---
 
 export async function fetchNoSolanaTokens(): Promise<DiscoveryToken[]> {
@@ -172,11 +199,11 @@ export async function fetchNoSolanaTokens(): Promise<DiscoveryToken[]> {
     });
   }
 
-  // Cross-reference with Jupiter to detect wrapped/bridged Solana presence
+  // Cross-reference with Jupiter to detect bridged Solana presence
   const jupiterMap = await fetchJupiterTokenMap();
   for (const token of results) {
     const jupToken = jupiterMap.get(token.symbol);
-    if (jupToken) {
+    if (jupToken && isLikelyBridgedMatch(token.name, jupToken.name)) {
       token.solanaStatus = "wrapped";
       token.solanaMint = jupToken.mint;
     }

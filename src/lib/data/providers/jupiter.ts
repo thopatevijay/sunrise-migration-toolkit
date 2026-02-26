@@ -2,6 +2,12 @@ import { cache, TTL } from "./cache";
 import { trackedFetch } from "./health";
 
 const LITE_BASE = "https://lite-api.jup.ag";
+const JUP_API_BASE = "https://api.jup.ag";
+
+function jupiterHeaders(): Record<string, string> {
+  const key = process.env.JUPITER_API_KEY;
+  return key ? { "x-api-key": key } : {};
+}
 
 // --- Raw types ---
 
@@ -35,9 +41,10 @@ export interface JupiterTokenInfo {
 }
 
 /**
- * Fetch all verified Jupiter tokens and return a map keyed by uppercase symbol.
- * Used to detect wrapped/bridged tokens that exist on Solana but aren't listed
- * as native on CoinGecko. Single API call, cached for 60 minutes.
+ * Fetch all verified Jupiter tokens via the API and return a map keyed by
+ * uppercase symbol. Used to detect wrapped/bridged tokens that exist on Solana
+ * but aren't listed as native on CoinGecko. Single API call, cached 60 min.
+ * Requires JUPITER_API_KEY env var.
  */
 export async function fetchJupiterTokenMap(): Promise<Map<string, JupiterTokenInfo>> {
   const cacheKey = "jup:token-map";
@@ -47,7 +54,8 @@ export async function fetchJupiterTokenMap(): Promise<Map<string, JupiterTokenIn
   try {
     const result = await trackedFetch<JupiterToken[]>(
       "jupiter",
-      `${LITE_BASE}/tokens/v2/all`
+      `${JUP_API_BASE}/tokens/v2/tag?query=verified`,
+      { headers: jupiterHeaders(), timeoutMs: 30_000 }
     );
 
     const map = new Map<string, JupiterTokenInfo>();
@@ -56,20 +64,16 @@ export async function fetchJupiterTokenMap(): Promise<Map<string, JupiterTokenIn
     for (const token of result.data) {
       if (!token.symbol || !token.id) continue;
       const key = token.symbol.toUpperCase();
-      // Keep the first match per symbol (Jupiter returns verified first)
+      // Keep the first match per symbol (API returns popular tokens first)
       if (!map.has(key)) {
-        map.set(key, {
-          mint: token.id,
-          symbol: token.symbol,
-          name: token.name,
-        });
+        map.set(key, { mint: token.id, symbol: token.symbol, name: token.name });
       }
     }
 
     cache.set(cacheKey, map, TTL.TOKEN_DISCOVERY);
     return map;
   } catch {
-    console.error("[jupiter] Failed to fetch token list");
+    console.error("[jupiter] Failed to fetch verified token list");
     return new Map();
   }
 }
