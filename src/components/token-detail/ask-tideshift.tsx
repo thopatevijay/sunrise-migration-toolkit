@@ -168,7 +168,7 @@ export function AskTideshift({ tokenId, tokenSymbol }: AskTideshiftProps) {
                 </div>
               ))}
 
-              {isLoading && messages[messages.length - 1]?.role === "user" && (
+              {isLoading && !(messages[messages.length - 1]?.role === "assistant" && messages[messages.length - 1]?.parts.some((p) => p.type === "text" && "text" in p && (p as { type: "text"; text: string }).text.length > 0)) && (
                 <div className="flex justify-start">
                   <div className="bg-white/[0.03] rounded-lg px-3 py-2">
                     <Loader2 className="h-4 w-4 animate-spin text-primary" />
